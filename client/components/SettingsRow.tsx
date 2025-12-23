@@ -16,6 +16,7 @@ interface SettingsRowProps {
   onPress?: () => void;
   showChevron?: boolean;
   destructive?: boolean;
+  disabled?: boolean;
 }
 
 export function SettingsRow({
@@ -29,10 +30,11 @@ export function SettingsRow({
   onPress,
   showChevron = true,
   destructive = false,
+  disabled = false,
 }: SettingsRowProps) {
   const { theme } = useTheme();
 
-  const textColor = destructive ? theme.error : theme.text;
+  const textColor = disabled ? theme.textSecondary : destructive ? theme.error : theme.text;
 
   const content = (
     <View style={[styles.row, { backgroundColor: theme.backgroundDefault }]}>
@@ -70,7 +72,8 @@ export function SettingsRow({
     return (
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+        disabled={disabled}
+        style={({ pressed }) => [{ opacity: disabled ? 0.5 : pressed ? 0.7 : 1 }]}
       >
         {content}
       </Pressable>

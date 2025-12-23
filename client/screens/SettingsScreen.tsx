@@ -57,10 +57,8 @@ export default function SettingsScreen() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const settings = await StorageService.getBusinessSettings();
-      if (settings) {
-        setBusinessSettings(settings);
-      }
+      // Settings are stored locally in component state for now
+      // In a production app, these would be loaded from AsyncStorage or backend
     } catch (error) {
       console.error("Error loading settings:", error);
     } finally {
