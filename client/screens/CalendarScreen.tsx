@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -21,6 +21,11 @@ export default function CalendarScreen() {
     new Date().toISOString().split("T")[0]
   );
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    initializeDataIfNeeded();
+  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -28,9 +33,29 @@ export default function CalendarScreen() {
     }, [])
   );
 
+  const initializeDataIfNeeded = async () => {
+    try {
+      const existingBookings = await StorageService.getBookings();
+      if (existingBookings.length === 0) {
+        await StorageService.initializeDemoData();
+        loadBookings();
+      }
+    } catch (error) {
+      console.error("Error initializing data:", error);
+      setLoading(false);
+    }
+  };
+
   const loadBookings = async () => {
-    const data = await StorageService.getBookings();
-    setBookings(data);
+    setLoading(true);
+    try {
+      const data = await StorageService.getBookings();
+      setBookings(data);
+    } catch (error) {
+      console.error("Error loading bookings:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -77,6 +102,16 @@ export default function CalendarScreen() {
     month: "long",
     year: "numeric",
   });
+
+  const formatDateForDisplay = (dateStr: string) => {
+    const [year, month, day] = dateStr.split("-");
+    const date = new Date(`${year}-${month}-${day}`);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   const renderDay = ({ item, index }: { item: number; index: number }) => {
     if (emptyDays.includes(index)) {
@@ -133,28 +168,41 @@ export default function CalendarScreen() {
           { paddingBottom: tabBarHeight + Spacing.xl },
         ]}
       >
-        <ThemedText type="h4" style={styles.bookingsTitle}>
-          {bookingsForSelectedDate.length > 0
-            ? `${bookingsForSelectedDate.length} booking${
-                bookingsForSelectedDate.length !== 1 ? "s" : ""
-              }`
-            : "No bookings"}
-        </ThemedText>
-        <FlatList
-          scrollEnabled={false}
-          data={bookingsForSelectedDate}
-          renderItem={({ item }) => (
-            <BookingCard
-              customerName={item.customerName}
-              serviceName={item.serviceName}
-              date={item.date}
-              time={item.time}
-              status={item.status}
-            />
+        <View style={styles.bookingsTitleContainer}>
+          <ThemedText type="h4" style={styles.bookingsTitle}>
+            {bookingsForSelectedDate.length > 0
+              ? `${bookingsForSelectedDate.length} booking${
+                  bookingsForSelectedDate.length !== 1 ? "s" : ""
+                }`
+              : "No bookings"}
+          </ThemedText>
+          {!loading && (
+            <ThemedText type="small" style={styles.selectedDateLabel}>
+              {formatDateForDisplay(selectedDateStr)}
+            </ThemedText>
           )}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
+        </View>
+        {bookingsForSelectedDate.length > 0 ? (
+          <FlatList
+            scrollEnabled={false}
+            data={bookingsForSelectedDate}
+            renderItem={({ item }) => (
+              <BookingCard
+                customerName={item.customerName}
+                serviceName={item.serviceName}
+                date={item.date}
+                time={item.time}
+                status={item.status}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+        ) : (
+          <ThemedText type="body" style={styles.emptyBookingsText}>
+            No bookings scheduled for this date
+          </ThemedText>
+        )}
       </View>
     </ThemedView>
   );
@@ -196,8 +244,19 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.1)",
   },
-  bookingsTitle: {
+  bookingsTitleContainer: {
     marginBottom: Spacing.lg,
+  },
+  bookingsTitle: {
+    marginBottom: Spacing.xs,
+  },
+  selectedDateLabel: {
+    opacity: 0.6,
+  },
+  emptyBookingsText: {
+    opacity: 0.6,
+    textAlign: "center",
+    paddingVertical: Spacing.xl,
   },
   separator: {
     height: Spacing.lg,
