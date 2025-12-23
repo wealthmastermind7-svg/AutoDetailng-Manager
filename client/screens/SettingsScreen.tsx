@@ -96,24 +96,6 @@ export default function SettingsScreen() {
     },
   ];
 
-  const renderItem = ({
-    item,
-  }: {
-    item: (typeof settingsItems)[0]["items"][0];
-  }) => (
-    <SettingsRow
-      icon={item.icon}
-      title={item.title}
-      subtitle={item.subtitle}
-      value={item.value}
-      hasToggle={item.hasToggle}
-      toggleValue={item.toggleValue}
-      onToggle={item.onToggle}
-      onPress={item.onPress}
-      destructive={item.destructive}
-    />
-  );
-
   return (
     <ThemedView style={styles.container}>
       <FlatList
@@ -129,9 +111,19 @@ export default function SettingsScreen() {
             <ThemedText type="h4" style={styles.sectionTitle}>
               {section.section}
             </ThemedText>
-            {section.items.map((item, idx) => (
+            {section.items.map((item: any, idx: number) => (
               <View key={idx} style={idx < section.items.length - 1 ? styles.itemGap : {}}>
-                <renderItem item={item} />
+                <SettingsRow
+                  icon={item.icon}
+                  title={item.title}
+                  subtitle={item.subtitle}
+                  value={item.value}
+                  hasToggle={item.hasToggle}
+                  toggleValue={item.toggleValue}
+                  onToggle={item.onToggle}
+                  onPress={item.onPress}
+                  destructive={item.destructive}
+                />
               </View>
             ))}
           </View>
