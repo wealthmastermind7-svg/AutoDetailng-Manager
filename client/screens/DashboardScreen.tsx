@@ -22,11 +22,31 @@ export default function DashboardScreen() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    initializeDataIfNeeded();
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       loadData();
     }, [])
   );
+
+  const initializeDataIfNeeded = async () => {
+    try {
+      const [existingBookings, existingServices] = await Promise.all([
+        StorageService.getBookings(),
+        StorageService.getServices(),
+      ]);
+      if (existingBookings.length === 0 || existingServices.length === 0) {
+        await StorageService.initializeDemoData();
+        loadData();
+      }
+    } catch (error) {
+      console.error("Error initializing data:", error);
+      setLoading(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -37,6 +57,8 @@ export default function DashboardScreen() {
       ]);
       setBookings(bookingsData);
       setServices(servicesData);
+    } catch (error) {
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -101,6 +123,11 @@ export default function DashboardScreen() {
             <ThemedText type="h3" style={styles.sectionTitle}>
               Upcoming Bookings
             </ThemedText>
+            {upcomingBookings.length === 0 && !loading && (
+              <ThemedText type="body" style={styles.emptyText}>
+                No upcoming bookings scheduled
+              </ThemedText>
+            )}
           </View>
         );
       default:
@@ -119,7 +146,7 @@ export default function DashboardScreen() {
     }
   };
 
-  const itemCount = 3 + upcomingBookings.length;
+  const itemCount = upcomingBookings.length > 0 ? 3 + upcomingBookings.length : 3;
 
   return (
     <ThemedView style={styles.container}>
@@ -159,5 +186,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     marginBottom: Spacing.lg,
+  },
+  emptyText: {
+    opacity: 0.6,
+    textAlign: "center",
   },
 });
