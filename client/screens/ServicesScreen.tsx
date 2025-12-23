@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -10,6 +10,7 @@ import { StorageService, Service } from "@/lib/storage";
 import { ServiceCard } from "@/components/ServiceCard";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ThemedText";
 import { RootStackParamList } from "@/navigation/RootStackNavigator";
 
 type Navigation = NativeStackNavigationProp<RootStackParamList>;
@@ -23,17 +24,35 @@ export default function ServicesScreen() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    initializeDataIfNeeded();
+  }, []);
+
   useFocusEffect(
     React.useCallback(() => {
       loadServices();
     }, [])
   );
 
+  const initializeDataIfNeeded = async () => {
+    try {
+      const existingServices = await StorageService.getServices();
+      if (existingServices.length === 0) {
+        await StorageService.initializeDemoData();
+        loadServices();
+      }
+    } catch (error) {
+      console.error("Error initializing data:", error);
+    }
+  };
+
   const loadServices = async () => {
     setLoading(true);
     try {
       const data = await StorageService.getServices();
       setServices(data);
+    } catch (error) {
+      console.error("Error loading services:", error);
     } finally {
       setLoading(false);
     }
@@ -57,6 +76,17 @@ export default function ServicesScreen() {
     />
   );
 
+  const renderEmptyState = () => (
+    <View style={[styles.emptyState, { paddingTop: headerHeight + Spacing["3xl"] }]}>
+      <ThemedText type="h4" style={styles.emptyTitle}>
+        No Services Yet
+      </ThemedText>
+      <ThemedText type="body" style={styles.emptyMessage}>
+        Create your first service by tapping the + button
+      </ThemedText>
+    </View>
+  );
+
   return (
     <ThemedView style={styles.container}>
       <FlatList
@@ -69,7 +99,8 @@ export default function ServicesScreen() {
         data={services}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        scrollEnabled={!loading}
+        scrollEnabled={services.length > 0}
+        ListEmptyComponent={!loading ? renderEmptyState : null}
       />
       <FloatingActionButton
         icon="plus"
@@ -87,5 +118,19 @@ export default function ServicesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: Spacing.lg,
+  },
+  emptyTitle: {
+    marginBottom: Spacing.lg,
+    textAlign: "center",
+  },
+  emptyMessage: {
+    textAlign: "center",
+    opacity: 0.6,
   },
 });
