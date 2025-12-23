@@ -1,30 +1,43 @@
 import { Platform } from "react-native";
 
-const tintColorLight = "#007AFF";
-const tintColorDark = "#0A84FF";
-
 export const Colors = {
   light: {
-    text: "#11181C",
+    text: "#000000",
+    textSecondary: "#6B6B6B",
+    textTertiary: "#9E9E9E",
     buttonText: "#FFFFFF",
-    tabIconDefault: "#687076",
-    tabIconSelected: tintColorLight,
-    link: "#007AFF",
-    backgroundRoot: "#FFFFFF", // Elevation 0
-    backgroundDefault: "#F2F2F2", // Elevation 1
-    backgroundSecondary: "#E6E6E6", // Elevation 2
-    backgroundTertiary: "#D9D9D9", // Elevation 3
+    tabIconDefault: "#6B6B6B",
+    tabIconSelected: "#000000",
+    link: "#000000",
+    backgroundRoot: "#FFFFFF",
+    backgroundDefault: "#F5F5F5",
+    backgroundSecondary: "#EBEBEB",
+    backgroundTertiary: "#D4D4D4",
+    border: "#4A4A4A",
+    borderLight: "#D4D4D4",
+    accent: "#000000",
+    success: "#2D2D2D",
+    warning: "#4A4A4A",
+    error: "#1A1A1A",
   },
   dark: {
-    text: "#ECEDEE",
-    buttonText: "#FFFFFF",
-    tabIconDefault: "#9BA1A6",
-    tabIconSelected: tintColorDark,
-    link: "#0A84FF",
-    backgroundRoot: "#1F2123", // Elevation 0
-    backgroundDefault: "#2A2C2E", // Elevation 1
-    backgroundSecondary: "#353739", // Elevation 2
-    backgroundTertiary: "#404244", // Elevation 3
+    text: "#FFFFFF",
+    textSecondary: "#9E9E9E",
+    textTertiary: "#6B6B6B",
+    buttonText: "#000000",
+    tabIconDefault: "#6B6B6B",
+    tabIconSelected: "#FFFFFF",
+    link: "#FFFFFF",
+    backgroundRoot: "#000000",
+    backgroundDefault: "#1A1A1A",
+    backgroundSecondary: "#2D2D2D",
+    backgroundTertiary: "#4A4A4A",
+    border: "#4A4A4A",
+    borderLight: "#2D2D2D",
+    accent: "#FFFFFF",
+    success: "#D4D4D4",
+    warning: "#9E9E9E",
+    error: "#EBEBEB",
   },
 };
 
@@ -38,68 +51,93 @@ export const Spacing = {
   "3xl": 32,
   "4xl": 40,
   "5xl": 48,
-  inputHeight: 48,
-  buttonHeight: 52,
+  "6xl": 56,
+  "7xl": 64,
+  "8xl": 72,
+  inputHeight: 56,
+  buttonHeight: 56,
 };
 
 export const BorderRadius = {
   xs: 8,
   sm: 12,
-  md: 18,
-  lg: 24,
-  xl: 30,
-  "2xl": 40,
-  "3xl": 50,
+  md: 16,
+  lg: 20,
+  xl: 24,
+  "2xl": 32,
+  "3xl": 40,
   full: 9999,
 };
 
 export const Typography = {
+  display: {
+    fontSize: 72,
+    fontWeight: "200" as const,
+  },
+  displayLarge: {
+    fontSize: 96,
+    fontWeight: "200" as const,
+  },
   h1: {
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: 48,
     fontWeight: "700" as const,
   },
   h2: {
-    fontSize: 28,
-    lineHeight: 36,
+    fontSize: 40,
     fontWeight: "700" as const,
   },
   h3: {
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 32,
     fontWeight: "600" as const,
   },
   h4: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 24,
     fontWeight: "600" as const,
   },
   body: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 18,
+    fontWeight: "400" as const,
+  },
+  bodyLarge: {
+    fontSize: 24,
     fontWeight: "400" as const,
   },
   small: {
     fontSize: 14,
-    lineHeight: 20,
+    fontWeight: "400" as const,
+  },
+  caption: {
+    fontSize: 12,
     fontWeight: "400" as const,
   },
   link: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 18,
     fontWeight: "400" as const,
+  },
+};
+
+export const Shadows = {
+  subtle: {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  medium: {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
 };
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: "system-ui",
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: "ui-serif",
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: "ui-rounded",
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: "ui-monospace",
   },
   default: {
@@ -116,3 +154,19 @@ export const Fonts = Platform.select({
     mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
   },
 });
+
+export const AnimationConfig = {
+  spring: {
+    damping: 15,
+    mass: 0.3,
+    stiffness: 150,
+    overshootClamping: true,
+  },
+  timing: {
+    fast: 150,
+    normal: 200,
+    slow: 300,
+    cinematic: 400,
+    graph: 600,
+  },
+};

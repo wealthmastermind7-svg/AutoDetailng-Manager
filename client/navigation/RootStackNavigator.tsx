@@ -1,18 +1,24 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "@/navigation/MainTabNavigator";
-import ModalScreen from "@/screens/ModalScreen";
+import BookingFlowNavigator from "@/navigation/BookingFlowNavigator";
+import ServiceEditorScreen from "@/screens/ServiceEditorScreen";
 import { useScreenOptions } from "@/hooks/useScreenOptions";
+import { HeaderButton } from "@react-navigation/elements";
+import { useTheme } from "@/hooks/useTheme";
 
 export type RootStackParamList = {
   Main: undefined;
-  Modal: undefined;
+  BookingFlow: undefined;
+  ServiceEditor: { serviceId?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootStackNavigator() {
   const screenOptions = useScreenOptions();
+  const opaqueScreenOptions = useScreenOptions({ transparent: false });
+  const { theme } = useTheme();
 
   return (
     <Stack.Navigator screenOptions={screenOptions}>
@@ -22,12 +28,35 @@ export default function RootStackNavigator() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
-        name="Modal"
-        component={ModalScreen}
+        name="BookingFlow"
+        component={BookingFlowNavigator}
         options={{
+          headerShown: false,
           presentation: "modal",
-          headerTitle: "Modal",
         }}
+      />
+      <Stack.Screen
+        name="ServiceEditor"
+        component={ServiceEditorScreen}
+        options={({ navigation, route }) => ({
+          ...opaqueScreenOptions,
+          presentation: "modal",
+          headerTitle: route.params?.serviceId ? "Edit Service" : "New Service",
+          headerLeft: () => (
+            <HeaderButton onPress={() => navigation.goBack()}>
+              Cancel
+            </HeaderButton>
+          ),
+          headerRight: () => (
+            <HeaderButton
+              onPress={() => {}}
+              style={{ fontWeight: "600" }}
+              tintColor={theme.accent}
+            >
+              Save
+            </HeaderButton>
+          ),
+        })}
       />
     </Stack.Navigator>
   );

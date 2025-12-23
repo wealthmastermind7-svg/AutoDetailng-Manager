@@ -6,17 +6,22 @@ import { Spacing } from "@/constants/theme";
 
 interface HeaderTitleProps {
   title: string;
+  showIcon?: boolean;
 }
 
-export function HeaderTitle({ title }: HeaderTitleProps) {
+export function HeaderTitle({ title, showIcon = true }: HeaderTitleProps) {
   return (
     <View style={styles.container}>
-      <Image
-        source={require("../../assets/images/icon.png")}
-        style={styles.icon}
-        resizeMode="contain"
-      />
-      <ThemedText style={styles.title}>{title}</ThemedText>
+      {showIcon ? (
+        <Image
+          source={require("../../assets/images/icon.png")}
+          style={styles.icon}
+          resizeMode="contain"
+        />
+      ) : null}
+      <ThemedText type="h4" style={styles.title}>
+        {title}
+      </ThemedText>
     </View>
   );
 }
@@ -31,9 +36,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     marginRight: Spacing.sm,
+    borderRadius: 6,
   },
   title: {
-    fontSize: 17,
-    fontWeight: "600",
+    fontWeight: "700",
   },
 });
