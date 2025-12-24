@@ -7,13 +7,15 @@ import {
   insertBusinessSchema, 
   insertServiceSchema, 
   insertCustomerSchema, 
-  insertBookingSchema 
+  insertBookingSchema,
+  insertPushTokenSchema,
 } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
 import fs from "fs";
 import QRCode from "qrcode";
 import { sendBookingConfirmation } from "./email";
+import { sendBookingNotification, sendTestNotification } from "./notifications";
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -301,21 +303,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const booking = await storage.createBooking(data);
       
+      // Get business and service for notifications
+      const business = await storage.getBusiness(req.params.businessId);
+      const service = await storage.getService(data.serviceId);
+      const customerName = req.body.customerName || "Customer";
+      const serviceName = service?.name || "Service";
+      
       // Send email confirmation
       if (req.body.customerEmail && req.body.customerName) {
-        const business = await storage.getBusiness(req.params.businessId);
-        const service = await storage.getService(data.serviceId);
-        
         sendBookingConfirmation({
           customerName: req.body.customerName,
           customerEmail: req.body.customerEmail,
-          serviceName: service?.name || "Service",
+          serviceName,
           date: data.date,
           time: data.time,
           price: data.totalPrice,
           confirmationNumber: booking.id.slice(0, 8).toUpperCase(),
           businessName: business?.name || "Business"
         }).catch(err => console.error("Failed to send confirmation email:", err));
+      }
+      
+      // Send push notification to business owner (if notifications are enabled)
+      if (business?.notificationsEnabled) {
+        sendBookingNotification(
+          req.params.businessId,
+          customerName,
+          serviceName,
+          data.date,
+          data.time
+        ).catch(err => console.error("Failed to send push notification:", err));
       }
       
       res.status(201).json(booking);
@@ -462,6 +478,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting stats:", error);
       res.status(500).json({ error: "Failed to get stats" });
+    }
+  });
+
+  // === PUSH TOKENS API ===
+  
+  // Register push token
+  app.post("/api/push-tokens", async (req: Request, res: Response) => {
+    try {
+      const data = insertPushTokenSchema.parse(req.body);
+      const pushToken = await storage.createPushToken(data);
+      res.status(201).json(pushToken);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error registering push token:", error);
+      res.status(500).json({ error: "Failed to register push token" });
+    }
+  });
+
+  // Delete push token
+  app.delete("/api/push-tokens", async (req: Request, res: Response) => {
+    try {
+      const { token, businessId } = req.body;
+      if (!token || !businessId) {
+        return res.status(400).json({ error: "Token and businessId are required" });
+      }
+      await storage.deletePushToken(token, businessId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting push token:", error);
+      res.status(500).json({ error: "Failed to delete push token" });
+    }
+  });
+
+  // Get push token count for a business (returns count only, not tokens for security)
+  app.get("/api/businesses/:businessId/push-tokens", async (req: Request, res: Response) => {
+    try {
+      const tokens = await storage.getPushTokens(req.params.businessId);
+      res.json({ 
+        count: tokens.length,
+        devices: tokens.map(t => ({ 
+          platform: t.platform, 
+          deviceName: t.deviceName,
+          createdAt: t.createdAt 
+        }))
+      });
+    } catch (error) {
+      console.error("Error getting push tokens:", error);
+      res.status(500).json({ error: "Failed to get push tokens" });
+    }
+  });
+
+  // Send test notification
+  app.post("/api/businesses/:businessId/test-notification", async (req: Request, res: Response) => {
+    try {
+      const result = await sendTestNotification(req.params.businessId);
+      res.json(result);
+    } catch (error) {
+      console.error("Error sending test notification:", error);
+      res.status(500).json({ error: "Failed to send test notification" });
     }
   });
 

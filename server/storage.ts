@@ -5,6 +5,7 @@ import {
   customers,
   bookings,
   availability,
+  pushTokens,
   type User,
   type InsertUser,
   type Business,
@@ -17,6 +18,8 @@ import {
   type InsertBooking,
   type Availability,
   type InsertAvailability,
+  type PushToken,
+  type InsertPushToken,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -60,6 +63,14 @@ export interface IStorage {
   
   // Demo Data
   initializeDemoData(businessId: string): Promise<void>;
+  
+  // Push Tokens
+  getPushTokens(businessId: string): Promise<PushToken[]>;
+  getPushTokenByToken(token: string): Promise<PushToken | undefined>;
+  createPushToken(pushToken: InsertPushToken): Promise<PushToken>;
+  updatePushToken(id: string, updates: Partial<InsertPushToken>): Promise<PushToken | undefined>;
+  deletePushToken(token: string, businessId: string): Promise<void>;
+  deactivatePushToken(token: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -259,6 +270,58 @@ export class DatabaseStorage implements IStorage {
   async setAvailability(avail: InsertAvailability): Promise<Availability> {
     const [created] = await db.insert(availability).values(avail).returning();
     return created;
+  }
+
+  // Push Tokens
+  async getPushTokens(businessId: string): Promise<PushToken[]> {
+    return db
+      .select()
+      .from(pushTokens)
+      .where(and(eq(pushTokens.businessId, businessId), eq(pushTokens.isActive, true)));
+  }
+
+  async getPushTokenByToken(token: string): Promise<PushToken | undefined> {
+    const [pushToken] = await db.select().from(pushTokens).where(eq(pushTokens.token, token));
+    return pushToken || undefined;
+  }
+
+  async createPushToken(pushToken: InsertPushToken): Promise<PushToken> {
+    // Check if token already exists
+    const existing = await this.getPushTokenByToken(pushToken.token);
+    if (existing) {
+      // Update existing token
+      const [updated] = await db
+        .update(pushTokens)
+        .set({ ...pushToken, isActive: true, updatedAt: new Date() })
+        .where(eq(pushTokens.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [created] = await db.insert(pushTokens).values(pushToken).returning();
+    return created;
+  }
+
+  async updatePushToken(id: string, updates: Partial<InsertPushToken>): Promise<PushToken | undefined> {
+    const [updated] = await db
+      .update(pushTokens)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(pushTokens.id, id))
+      .returning();
+    return updated || undefined;
+  }
+
+  async deletePushToken(token: string, businessId: string): Promise<void> {
+    await db
+      .delete(pushTokens)
+      .where(and(eq(pushTokens.token, token), eq(pushTokens.businessId, businessId)));
+  }
+
+  async deactivatePushToken(token: string): Promise<void> {
+    await db
+      .update(pushTokens)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(pushTokens.token, token));
   }
 
   // Demo Data

@@ -30,6 +30,7 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - customers: id, businessId, name, email, phone
 - bookings: id, businessId, customerId, serviceId, date, time, status, totalPrice (cents)
 - availability: id, businessId, dayOfWeek, startTime, endTime, isAvailable
+- pushTokens: id, businessId, token, platform, deviceName, isActive (for Expo Push Notifications)
 
 ### Navigation Structure
 - MainTabNavigator: 5 tabs for admin
@@ -61,14 +62,20 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - POST /api/demo-data - Initialize demo data
 - DELETE /api/data - Clear all business data
 - GET /api/businesses/:businessId/qrcode - Generate QR code for booking link
+- POST /api/push-tokens - Register push notification token
+- DELETE /api/push-tokens - Unregister push token
+- GET /api/businesses/:businessId/push-tokens - List registered devices
+- POST /api/businesses/:businessId/test-notification - Send test notification
 
 ## Key Files
 - `shared/schema.ts` - Database schema definitions
 - `server/storage.ts` - Database operations
 - `server/routes.ts` - API route handlers
+- `server/notifications.ts` - Push notification service (Expo Push)
 - `server/templates/booking.html` - Public booking page
 - `client/lib/api.ts` - Frontend API client with retry logic
 - `client/lib/query-client.ts` - Query client with smart URL detection
+- `client/lib/notifications.ts` - Client-side notification handling
 - `client/screens/*.tsx` - Admin dashboard screens
 
 ## Deployment Configuration
@@ -159,10 +166,36 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - Save and Cancel actions
 - Link cards with remove functionality
 
+## Push Notifications System (Completed Dec 24, 2025)
+✅ **Production-Ready Push Notifications** with:
+- Expo Push Notifications service integration
+- Permission request flow with proper iOS/Android handling
+- Device token registration and management
+- Automatic notification on new booking creation
+- Test notification feature in Settings
+- Token cleanup for unregistered devices
+- Platform detection (iOS/Android/Web)
+- Settings navigation when permission denied
+- Database persistence of push tokens
+- Graceful web fallback (shows message to use Expo Go)
+
+### Key Components:
+- `client/lib/notifications.ts` - Permission handling, token management
+- `server/notifications.ts` - Expo Push API integration
+- `shared/schema.ts` - pushTokens table schema
+- `app.json` - expo-notifications plugin configuration
+
+### How It Works:
+1. User toggles "Enable Notifications" in Settings
+2. App requests notification permission from device
+3. If granted, registers Expo Push Token with backend
+4. When new booking created, business owner receives push notification
+5. "Send Test Notification" verifies the system works
+
 ## Next Phase Features
 - User authentication/login
 - Payment processing (Stripe)
-- Email/SMS notifications
+- SMS notifications (in addition to push)
 - Multi-location support
 - Advanced analytics
 - ServiceEditor API integration (server-side link persistence)

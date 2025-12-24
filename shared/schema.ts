@@ -100,6 +100,22 @@ export const availability = pgTable("availability", {
   isActive: boolean("is_active").default(true),
 });
 
+// Push tokens table (for Expo Push Notifications)
+export const pushTokens = pgTable("push_tokens", {
+  id: varchar("id")
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id")
+    .notNull()
+    .references(() => businesses.id, { onDelete: "cascade" }),
+  token: text("token").notNull(),
+  platform: text("platform").notNull(), // 'ios' | 'android' | 'web'
+  deviceName: text("device_name"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const businessesRelations = relations(businesses, ({ many }) => ({
   users: many(users),
@@ -107,6 +123,7 @@ export const businessesRelations = relations(businesses, ({ many }) => ({
   customers: many(customers),
   bookings: many(bookings),
   availability: many(availability),
+  pushTokens: many(pushTokens),
 }));
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -154,6 +171,13 @@ export const availabilityRelations = relations(availability, ({ one }) => ({
   }),
 }));
 
+export const pushTokensRelations = relations(pushTokens, ({ one }) => ({
+  business: one(businesses, {
+    fields: [pushTokens.businessId],
+    references: [businesses.id],
+  }),
+}));
+
 // Zod schemas for validation
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -187,6 +211,12 @@ export const insertAvailabilitySchema = createInsertSchema(availability).omit({
   id: true,
 });
 
+export const insertPushTokenSchema = createInsertSchema(pushTokens).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -200,6 +230,9 @@ export type Booking = typeof bookings.$inferSelect;
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Availability = typeof availability.$inferSelect;
 export type InsertAvailability = z.infer<typeof insertAvailabilitySchema>;
+
+export type PushToken = typeof pushTokens.$inferSelect;
+export type InsertPushToken = z.infer<typeof insertPushTokenSchema>;
 
 // Booking status type
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
