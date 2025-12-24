@@ -213,7 +213,7 @@ export default function SettingsScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               await api.clearAllData();
               Alert.alert("Success", "All data has been cleared", 
-                [{ text: "OK", onPress: () => navigation.navigate("Home" as any) }]
+                [{ text: "OK", onPress: () => navigation.navigate("DashboardTab" as any) }]
               );
             } catch (error) {
               console.error("Error clearing data:", error);
@@ -237,7 +237,7 @@ export default function SettingsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const businessLabel = DEMO_TYPES.find(t => t.id === businessType)?.label;
       Alert.alert("Success", `Demo data for ${businessLabel} has been loaded`,
-        [{ text: "View Dashboard", onPress: () => navigation.navigate("Home" as any) }]
+        [{ text: "View Dashboard", onPress: () => navigation.navigate("DashboardTab" as any) }]
       );
     } catch (error) {
       console.error("Error initializing demo data:", error);
