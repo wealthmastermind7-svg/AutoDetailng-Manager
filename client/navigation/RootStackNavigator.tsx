@@ -50,7 +50,6 @@ export default function RootStackNavigator() {
           headerRight: () => (
             <HeaderButton
               onPress={() => {}}
-              style={{ fontWeight: "600" }}
               tintColor={theme.accent}
             >
               Save
