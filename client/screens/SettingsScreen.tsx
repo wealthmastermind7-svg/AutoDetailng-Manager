@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable, ActivityIndicator } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -65,6 +66,7 @@ export default function SettingsScreen() {
   };
 
   const handleClearAllData = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       "Clear All Data",
       "This will delete all services, bookings, and customers. This action cannot be undone.",
@@ -75,6 +77,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             setClearDataLoading(true);
             try {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               await api.clearAllData();
               Alert.alert("Success", "All data has been cleared");
             } catch (error) {
@@ -91,9 +94,11 @@ export default function SettingsScreen() {
   };
 
   const handleInitializeDemoData = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setDemoDataLoading(true);
     try {
       await api.initializeDemoData();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       Alert.alert("Success", "Demo data has been initialized");
     } catch (error) {
       console.error("Error initializing demo data:", error);
@@ -121,6 +126,7 @@ export default function SettingsScreen() {
 
   const handleShowQRCode = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const data = await api.getQRCode();
       if (data) {
         setQrCode(data.qrCode);

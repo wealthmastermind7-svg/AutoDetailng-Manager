@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -38,6 +39,7 @@ export function CalendarDay({
   const handlePressIn = () => {
     if (!isDisabled) {
       scale.value = withSpring(0.9, AnimationConfig.spring);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     }
   };
 

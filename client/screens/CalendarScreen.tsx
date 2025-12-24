@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useFocusEffect } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -10,6 +11,7 @@ import { CalendarDay } from "@/components/CalendarDay";
 import { BookingCard } from "@/components/BookingCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { Feather } from "@expo/vector-icons";
 
 export default function CalendarScreen() {
   const headerHeight = useHeaderHeight();
@@ -90,10 +92,12 @@ export default function CalendarScreen() {
   const bookingsForSelectedDate = bookings.filter((b) => b.date === selectedDateStr);
 
   const handlePrevMonth = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
   };
 
   const handleNextMonth = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   };
 

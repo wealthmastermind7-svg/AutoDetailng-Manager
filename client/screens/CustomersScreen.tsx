@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet, Alert } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -53,6 +54,7 @@ export default function CustomersScreen() {
   };
 
   const handleSelectCustomer = (customer: Customer) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       customer.name,
       `Email: ${customer.email}\nPhone: ${customer.phone || "N/A"}\nTotal Bookings: ${customer.totalBookings || 0}`,

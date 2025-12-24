@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Pressable, ViewStyle } from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -31,6 +32,7 @@ export function FloatingActionButton({
 
   const handlePressIn = () => {
     scale.value = withSpring(0.9, AnimationConfig.spring);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
   };
 
   const handlePressOut = () => {

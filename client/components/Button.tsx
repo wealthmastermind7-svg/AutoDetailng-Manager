@@ -1,5 +1,6 @@
 import React, { ReactNode } from "react";
 import { StyleSheet, Pressable, ViewStyle, StyleProp } from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -44,6 +45,7 @@ export function Button({
   const handlePressIn = () => {
     if (!disabled) {
       scale.value = withSpring(0.98, springConfig);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 

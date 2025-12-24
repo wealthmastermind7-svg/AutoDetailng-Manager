@@ -1,5 +1,6 @@
 import React from "react";
 import { View, StyleSheet, Pressable, Switch } from "react-native";
+import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
@@ -71,7 +72,12 @@ export function SettingsRow({
   if (onPress) {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={() => {
+          if (!disabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress();
+          }
+        }}
         disabled={disabled}
         style={({ pressed }) => [{ opacity: disabled ? 0.5 : pressed ? 0.7 : 1 }]}
       >
