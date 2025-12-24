@@ -212,7 +212,9 @@ export default function SettingsScreen() {
             try {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               await api.clearAllData();
-              Alert.alert("Success", "All data has been cleared");
+              Alert.alert("Success", "All data has been cleared", 
+                [{ text: "OK", onPress: () => navigation.navigate("Home" as any) }]
+              );
             } catch (error) {
               console.error("Error clearing data:", error);
               Alert.alert("Error", "Failed to clear data. Please try again.");
@@ -233,7 +235,10 @@ export default function SettingsScreen() {
     try {
       await api.initializeDemoData(businessType);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Alert.alert("Success", `Demo data for ${DEMO_TYPES.find(t => t.id === businessType)?.label} has been loaded`);
+      const businessLabel = DEMO_TYPES.find(t => t.id === businessType)?.label;
+      Alert.alert("Success", `Demo data for ${businessLabel} has been loaded`,
+        [{ text: "View Dashboard", onPress: () => navigation.navigate("Home" as any) }]
+      );
     } catch (error) {
       console.error("Error initializing demo data:", error);
       Alert.alert("Error", "Failed to load demo data. Please try again.");
