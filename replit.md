@@ -105,6 +105,15 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
    - Status: Fixed - booking page now serves correctly at bookflowx.cerolauto.store/book/:slug
    - QR codes now correctly generate with production domain
 
+5. **API Connectivity Issues (Web & Expo Go)** - RESOLVED (Dec 24, 2025)
+   - Issue: Web preview worked but Expo Go native app couldn't reach API
+   - Root Cause: Browser uses window.location for dynamic URL detection, but native Expo Go needed environment variable handling
+   - Fix: Enhanced getApiUrl() to:
+     - Check window.location in browser (works for web preview and production)
+     - Handle literal $REPLIT_DEV_DOMAIN in EXPO_PUBLIC_DOMAIN by falling back to REACT_NATIVE_PACKAGER_HOSTNAME
+     - Fallback to localhost:5000 for local development
+   - Status: FIXED - Both web preview and Expo Go now connect to API successfully
+
 ## Testing & Deployment
 - Local dev: Run `npm run server:dev && npm run expo:dev`, access web version at http://localhost:8081
 - TestFlight: App needs static build with `EXPO_PUBLIC_DOMAIN=elegant-canvas--wealthmastermin.replit.app`
