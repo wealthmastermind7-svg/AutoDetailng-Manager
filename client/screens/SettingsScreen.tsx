@@ -264,7 +264,7 @@ export default function SettingsScreen() {
         onRequestClose={() => setQrModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
             <View style={styles.modalHeader}>
               <ThemedText type="h3">Booking QR Code</ThemedText>
               <Pressable onPress={() => setQrModalVisible(false)} style={styles.closeButton}>
@@ -286,11 +286,9 @@ export default function SettingsScreen() {
             ) : null}
             
             <View style={styles.modalActions}>
-              <Button
-                title="Share QR Code"
-                onPress={handleShareQRCode}
-                variant="primary"
-              />
+              <Button onPress={handleShareQRCode}>
+                Share QR Code
+              </Button>
             </View>
           </View>
         </View>
