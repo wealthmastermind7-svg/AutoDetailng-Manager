@@ -11,6 +11,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
+import fs from "fs";
 import QRCode from "qrcode";
 import { sendBookingConfirmation } from "./email";
 
@@ -18,7 +19,30 @@ import { sendBookingConfirmation } from "./email";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Load booking HTML into memory for production reliability
+let bookingHtmlContent: string = "";
+async function loadBookingHtml() {
+  const paths = [
+    path.resolve(__dirname, "templates/booking.html"),
+    path.resolve(process.cwd(), "server/templates/booking.html"),
+    path.resolve(process.cwd(), "templates/booking.html"),
+  ];
+  
+  for (const p of paths) {
+    try {
+      bookingHtmlContent = fs.readFileSync(p, "utf-8");
+      console.log(`Loaded booking.html from: ${p}`);
+      return;
+    } catch {}
+  }
+  
+  console.warn("Warning: Could not load booking.html. Paths tried:", paths);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Load booking HTML at startup
+  await loadBookingHtml();
+  
   // === BUSINESSES API ===
   
   // Get business by slug (public - for booking flow)
@@ -498,52 +522,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve public booking page (client-side routing)
   app.get("/book/:slug", (req: Request, res: Response) => {
-    // Try multiple paths to handle both dev and production builds
-    const paths = [
-      path.resolve(__dirname, "templates/booking.html"),
-      path.resolve(process.cwd(), "server/templates/booking.html"),
-      path.resolve(process.cwd(), "templates/booking.html"),
-    ];
-    
-    let bookingPath = paths[0];
-    for (const p of paths) {
-      try {
-        require("fs").accessSync(p);
-        bookingPath = p;
-        break;
-      } catch {}
-    }
-    
-    try {
-      res.sendFile(bookingPath);
-    } catch (error) {
-      console.error(`Failed to serve booking page. Tried paths: ${paths.join(", ")}`, error);
-      res.status(404).json({ error: "Booking page not found" });
+    if (bookingHtmlContent) {
+      res.type("text/html").send(bookingHtmlContent);
+    } else {
+      res.status(500).json({ error: "Booking page not available" });
     }
   });
   
   app.get("/book/:slug/*", (req: Request, res: Response) => {
-    // Try multiple paths to handle both dev and production builds
-    const paths = [
-      path.resolve(__dirname, "templates/booking.html"),
-      path.resolve(process.cwd(), "server/templates/booking.html"),
-      path.resolve(process.cwd(), "templates/booking.html"),
-    ];
-    
-    let bookingPath = paths[0];
-    for (const p of paths) {
-      try {
-        require("fs").accessSync(p);
-        bookingPath = p;
-        break;
-      } catch {}
-    }
-    
-    try {
-      res.sendFile(bookingPath);
-    } catch (error) {
-      console.error(`Failed to serve booking page. Tried paths: ${paths.join(", ")}`, error);
-      res.status(404).json({ error: "Booking page not found" });
+    if (bookingHtmlContent) {
+      res.type("text/html").send(bookingHtmlContent);
+    } else {
+      res.status(500).json({ error: "Booking page not available" });
     }
   });
 
