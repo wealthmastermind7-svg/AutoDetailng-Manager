@@ -1,11 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+export interface ServiceLink {
+  id: string;
+  title: string;
+  url: string;
+  category: "gallery" | "video" | "external" | "social";
+}
+
 export interface Service {
   id: string;
   name: string;
   duration: number;
   price: number;
   description?: string;
+  links?: ServiceLink[];
 }
 
 export interface Customer {
