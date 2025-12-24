@@ -267,79 +267,85 @@ export class DatabaseStorage implements IStorage {
     const existingServices = await this.getServices(businessId);
     if (existingServices.length > 0) return;
 
-    // Create demo services
-    const demoServices = [
-      { businessId, name: "Haircut", duration: 30, price: 4500, description: "Professional haircut" },
-      { businessId, name: "Hair Coloring", duration: 120, price: 8500, description: "Full head color treatment" },
-      { businessId, name: "Beard Trim", duration: 15, price: 2000, description: "Beard grooming and shaping" },
-      { businessId, name: "Styling", duration: 45, price: 5500, description: "Hair styling for special occasions" },
-    ];
+    try {
+      // Create demo services
+      const demoServices = [
+        { businessId, name: "Haircut", duration: 30, price: 4500, description: "Professional haircut" },
+        { businessId, name: "Hair Coloring", duration: 120, price: 8500, description: "Full head color treatment" },
+        { businessId, name: "Beard Trim", duration: 15, price: 2000, description: "Beard grooming and shaping" },
+        { businessId, name: "Styling", duration: 45, price: 5500, description: "Hair styling for special occasions" },
+      ];
 
-    const createdServices: Service[] = [];
-    for (const service of demoServices) {
-      const created = await this.createService(service);
-      createdServices.push(created);
-    }
+      const createdServices: Service[] = [];
+      for (const service of demoServices) {
+        const created = await this.createService(service);
+        createdServices.push(created);
+      }
 
-    // Create demo customers
-    const demoCustomers = [
-      { businessId, name: "John Smith", email: "john@example.com", phone: "555-0101" },
-      { businessId, name: "Sarah Johnson", email: "sarah@example.com", phone: "555-0102" },
-      { businessId, name: "Michael Brown", email: "michael@example.com", phone: "555-0103" },
-      { businessId, name: "Emma Davis", email: "emma@example.com", phone: "555-0104" },
-    ];
+      // Create demo customers with unique identifiers
+      const timestamp = Date.now();
+      const demoCustomers = [
+        { businessId, name: "John Smith", email: `john-${timestamp}@example.com`, phone: "555-0101" },
+        { businessId, name: "Sarah Johnson", email: `sarah-${timestamp}@example.com`, phone: "555-0102" },
+        { businessId, name: "Michael Brown", email: `michael-${timestamp}@example.com`, phone: "555-0103" },
+        { businessId, name: "Emma Davis", email: `emma-${timestamp}@example.com`, phone: "555-0104" },
+      ];
 
-    const createdCustomers: Customer[] = [];
-    for (const customer of demoCustomers) {
-      const created = await this.createCustomer(customer);
-      createdCustomers.push(created);
-    }
+      const createdCustomers: Customer[] = [];
+      for (const customer of demoCustomers) {
+        const created = await this.createCustomer(customer);
+        createdCustomers.push(created);
+      }
 
-    // Create demo bookings
-    const today = new Date();
-    const demoBookings = [
-      {
-        businessId,
-        customerId: createdCustomers[0].id,
-        serviceId: createdServices[0].id,
-        date: new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        time: "10:00 AM",
-        status: "confirmed",
-        totalPrice: createdServices[0].price,
-      },
-      {
-        businessId,
-        customerId: createdCustomers[1].id,
-        serviceId: createdServices[1].id,
-        date: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        time: "2:00 PM",
-        status: "pending",
-        totalPrice: createdServices[1].price,
-      },
-      {
-        businessId,
-        customerId: createdCustomers[2].id,
-        serviceId: createdServices[0].id,
-        date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-        time: "11:00 AM",
-        status: "confirmed",
-        totalPrice: createdServices[0].price,
-      },
-    ];
+      // Create demo bookings
+      const today = new Date();
+      const demoBookings = [
+        {
+          businessId,
+          customerId: createdCustomers[0].id,
+          serviceId: createdServices[0].id,
+          date: new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          time: "10:00 AM",
+          status: "confirmed",
+          totalPrice: createdServices[0].price,
+        },
+        {
+          businessId,
+          customerId: createdCustomers[1].id,
+          serviceId: createdServices[1].id,
+          date: new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          time: "2:00 PM",
+          status: "pending",
+          totalPrice: createdServices[1].price,
+        },
+        {
+          businessId,
+          customerId: createdCustomers[2].id,
+          serviceId: createdServices[0].id,
+          date: new Date(today.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          time: "11:00 AM",
+          status: "confirmed",
+          totalPrice: createdServices[0].price,
+        },
+      ];
 
-    for (const booking of demoBookings) {
-      await this.createBooking(booking);
-    }
+      for (const booking of demoBookings) {
+        await this.createBooking(booking);
+      }
 
-    // Create default availability (Monday-Friday, 9am-5pm)
-    for (let day = 1; day <= 5; day++) {
-      await this.setAvailability({
-        businessId,
-        dayOfWeek: day,
-        startTime: "09:00",
-        endTime: "17:00",
-        isActive: true,
-      });
+      // Create default availability (Monday-Friday, 9am-5pm)
+      for (let day = 1; day <= 5; day++) {
+        await this.setAvailability({
+          businessId,
+          dayOfWeek: day,
+          startTime: "09:00",
+          endTime: "17:00",
+          isActive: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error in initializeDemoData:", error);
+      throw error;
     }
   }
 }
