@@ -326,9 +326,29 @@ export class DatabaseStorage implements IStorage {
 
   // Demo Data
   async initializeDemoData(businessId: string, businessType: string = "salon"): Promise<void> {
-    // Check if services already exist
+    // Clear existing demo data before loading new type
     const existingServices = await this.getServices(businessId);
-    if (existingServices.length > 0) return;
+    if (existingServices.length > 0) {
+      // Delete all existing services and their associated bookings and availability
+      for (const service of existingServices) {
+        await this.deleteService(service.id);
+      }
+      // Delete all customers and their bookings
+      const existingCustomers = await this.getCustomers(businessId);
+      for (const customer of existingCustomers) {
+        // Delete bookings first (due to foreign key constraints)
+        const customerBookings = await db
+          .delete(bookings)
+          .where(eq(bookings.customerId, customer.id));
+        // Then delete customer
+        await db.delete(customers).where(eq(customers.id, customer.id));
+      }
+      // Delete availability
+      const existingAvailability = await this.getAvailability(businessId);
+      for (const avail of existingAvailability) {
+        await db.delete(availability).where(eq(availability.id, avail.id));
+      }
+    }
 
     const demoDataTemplates: Record<string, { name: string; services: any[]; customers: any[] }> = {
       salon: {
