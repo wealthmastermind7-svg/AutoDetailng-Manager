@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable, ActivityIndicator } from "react-native";
+import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable, ActivityIndicator, TextInput } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -29,6 +29,9 @@ export default function SettingsScreen() {
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [bookingUrl, setBookingUrl] = useState<string>("");
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingField, setEditingField] = useState<"name" | "website" | "phone" | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   useEffect(() => {
     initializeBusiness();
@@ -157,6 +160,30 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleEditBusinessField = (field: "name" | "website" | "phone") => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setEditingField(field);
+    const currentValue = business?.[field as keyof Business];
+    setEditValue(currentValue ? String(currentValue) : "");
+    setEditModalVisible(true);
+  };
+
+  const handleSaveBusinessField = async () => {
+    if (!business || !editingField) return;
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      const updates: Partial<Business> = { [editingField]: editValue };
+      const updated = await api.updateBusiness(updates);
+      setBusiness(updated);
+      setEditModalVisible(false);
+      setEditingField(null);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (error) {
+      console.error("Error updating business:", error);
+      Alert.alert("Error", "Failed to update business information");
+    }
+  };
+
   const settingsItems = [
     {
       section: "Business Settings",
@@ -164,20 +191,26 @@ export default function SettingsScreen() {
         {
           icon: "briefcase" as const,
           title: "Business Name",
-          subtitle: "Your business name",
+          subtitle: "Tap to edit",
           value: business?.name || "My Business",
+          onPress: () => handleEditBusinessField("name"),
+          showChevron: true,
         },
         {
           icon: "globe" as const,
           title: "Website",
-          subtitle: "Your business website",
+          subtitle: "Tap to edit",
           value: business?.website || "Not set",
+          onPress: () => handleEditBusinessField("website"),
+          showChevron: true,
         },
         {
           icon: "phone" as const,
           title: "Phone",
-          subtitle: "Contact number",
+          subtitle: "Tap to edit",
           value: business?.phone || "Not set",
+          onPress: () => handleEditBusinessField("phone"),
+          showChevron: true,
         },
       ],
     },
@@ -271,6 +304,41 @@ export default function SettingsScreen() {
       />
 
       <Modal
+        visible={editModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault }]}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="h3">
+                {editingField === "name" && "Business Name"}
+                {editingField === "website" && "Website"}
+                {editingField === "phone" && "Phone"}
+              </ThemedText>
+              <Pressable onPress={() => setEditModalVisible(false)} style={styles.closeButton}>
+                <Feather name="x" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+            <TextInput
+              value={editValue}
+              onChangeText={setEditValue}
+              placeholder={editingField === "name" ? "Business name" : editingField === "website" ? "Website URL" : "Phone number"}
+              style={[
+                styles.editInput,
+                { backgroundColor: theme.backgroundSecondary, color: theme.text, borderColor: theme.backgroundTertiary }
+              ]}
+              placeholderTextColor={theme.textSecondary}
+            />
+            <View style={styles.modalActions}>
+              <Button onPress={handleSaveBusinessField}>Save</Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={qrModalVisible}
         transparent
         animationType="fade"
@@ -360,5 +428,12 @@ const styles = StyleSheet.create({
   },
   itemGap: {
     marginBottom: Spacing.lg,
+  },
+  editInput: {
+    borderWidth: 1,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.lg,
+    fontSize: 16,
   },
 });
