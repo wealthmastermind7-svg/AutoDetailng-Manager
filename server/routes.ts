@@ -498,11 +498,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve public booking page (client-side routing)
   app.get("/book/:slug", (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, "templates", "booking.html"));
+    const bookingPath = path.resolve(__dirname, "templates/booking.html");
+    try {
+      res.sendFile(bookingPath);
+    } catch (error) {
+      console.error(`Failed to serve booking page from ${bookingPath}:`, error);
+      res.status(404).json({ error: "Booking page not found" });
+    }
   });
   
   app.get("/book/:slug/*", (req: Request, res: Response) => {
-    res.sendFile(path.join(__dirname, "templates", "booking.html"));
+    const bookingPath = path.resolve(__dirname, "templates/booking.html");
+    try {
+      res.sendFile(bookingPath);
+    } catch (error) {
+      console.error(`Failed to serve booking page from ${bookingPath}:`, error);
+      res.status(404).json({ error: "Booking page not found" });
+    }
   });
 
   const httpServer = createServer(app);

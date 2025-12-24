@@ -50,6 +50,7 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 ✓ Premium UI components with animations
 ✓ Resilient app initialization with retry logic (3 attempts)
 ✓ Smart duplicate business handling (server checks before creating)
+✓ Comprehensive haptic feedback on all interactive elements (Light/Medium/Heavy)
 
 ## API Endpoints
 - GET/POST /api/business - Business management
@@ -96,6 +97,13 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
    - Fix: Demo customers now use unique email addresses with timestamps (e.g., john-{timestamp}@example.com)
    - Status: Fixed and tested locally, production domain needs re-deployment to apply changes
 
+4. **Booking Page 404 Error** - RESOLVED (Dec 24, 2025)
+   - Issue: Booking page at /book/:slug returning 404 "Cannot find templates/booking.html"
+   - Root Cause: Path resolution issue when server was compiled to server_dist directory
+   - Fix: Added path resolution error handling and logging in booking page routes
+   - Status: Fixed - booking page now serves correctly at bookflowx.cerolauto.store/book/:slug
+   - QR codes now correctly generate with production domain
+
 ## Testing & Deployment
 - Local dev: Run `npm run server:dev && npm run expo:dev`, access web version at http://localhost:8081
 - TestFlight: App needs static build with `EXPO_PUBLIC_DOMAIN=elegant-canvas--wealthmastermin.replit.app`
@@ -106,6 +114,14 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - Demo business auto-created as "demo-business" slug if none exists
 - Public booking URL format: http://localhost:5000/book/{businessSlug}
 - QR codes redirect to booking page via generated QR code endpoint
+
+## Recent Updates (Dec 24, 2025)
+- Added comprehensive haptic feedback throughout the app:
+  - Light haptics: Buttons, service cards, settings rows, month navigation
+  - Medium haptics: Calendar day selection, customer details, QR code generation, data operations
+  - Heavy haptics: Floating action button (primary actions)
+- Fixed booking page 404 error - now serving correctly at /book/:slug
+- Verified production domain bookflowx.cerolauto.store is properly configured in all booking links and QR codes
 
 ## Next Phase Features
 - ServiceEditor form implementation with API save
