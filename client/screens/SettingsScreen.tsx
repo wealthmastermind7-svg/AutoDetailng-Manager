@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Alert } from "react-native";
+import { View, FlatList, StyleSheet, Alert, Share, Platform } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { StorageService } from "@/lib/storage";
+import { api, Business } from "@/lib/api";
 import { SettingsRow } from "@/components/SettingsRow";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
-
-interface BusinessSettings {
-  businessName: string;
-  website: string;
-  phone: string;
-}
 
 export default function SettingsScreen() {
   const headerHeight = useHeaderHeight();
@@ -24,41 +18,40 @@ export default function SettingsScreen() {
   const navigation = useNavigation();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [businessSettings, setBusinessSettings] = useState<BusinessSettings>({
-    businessName: "BookFlow",
-    website: "bookflow.app",
-    phone: "+1 (555) 123-4567",
-  });
+  const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(false);
   const [demoDataLoading, setDemoDataLoading] = useState(false);
   const [clearDataLoading, setClearDataLoading] = useState(false);
 
   useEffect(() => {
-    initializeDataIfNeeded();
+    initializeBusiness();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadSettings();
+      if (api.getBusinessId()) {
+        loadSettings();
+      }
     }, [])
   );
 
-  const initializeDataIfNeeded = async () => {
+  const initializeBusiness = async () => {
     try {
-      const existingBookings = await StorageService.getBookings();
-      if (existingBookings.length === 0) {
-        await StorageService.initializeDemoData();
-      }
+      const biz = await api.getOrCreateBusiness();
+      setBusiness(biz);
     } catch (error) {
-      console.error("Error initializing data:", error);
+      console.error("Error initializing business:", error);
     }
   };
 
   const loadSettings = async () => {
     setLoading(true);
     try {
-      // Settings are stored locally in component state for now
-      // In a production app, these would be loaded from AsyncStorage or backend
+      const biz = await api.getBusiness();
+      if (biz) {
+        setBusiness(biz);
+        setNotificationsEnabled(biz.notificationsEnabled ?? true);
+      }
     } catch (error) {
       console.error("Error loading settings:", error);
     } finally {
@@ -77,12 +70,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             setClearDataLoading(true);
             try {
-              await StorageService.clearAllData();
-              setBusinessSettings({
-                businessName: "BookFlow",
-                website: "bookflow.app",
-                phone: "+1 (555) 123-4567",
-              });
+              await api.clearAllData();
               Alert.alert("Success", "All data has been cleared");
             } catch (error) {
               console.error("Error clearing data:", error);
@@ -100,13 +88,26 @@ export default function SettingsScreen() {
   const handleInitializeDemoData = async () => {
     setDemoDataLoading(true);
     try {
-      await StorageService.initializeDemoData();
+      await api.initializeDemoData();
       Alert.alert("Success", "Demo data has been initialized");
     } catch (error) {
       console.error("Error initializing demo data:", error);
       Alert.alert("Error", "Failed to load demo data. Please try again.");
     } finally {
       setDemoDataLoading(false);
+    }
+  };
+
+  const handleShareBookingLink = async () => {
+    if (!business) return;
+    const bookingUrl = `${process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app"}/book/${business.slug}`;
+    try {
+      await Share.share({
+        message: `Book an appointment with ${business.name}: https://${bookingUrl}`,
+        url: `https://${bookingUrl}`,
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
     }
   };
 
@@ -118,19 +119,31 @@ export default function SettingsScreen() {
           icon: "briefcase" as const,
           title: "Business Name",
           subtitle: "Your business name",
-          value: businessSettings.businessName,
+          value: business?.name || "My Business",
         },
         {
           icon: "globe" as const,
           title: "Website",
           subtitle: "Your business website",
-          value: businessSettings.website,
+          value: business?.website || "Not set",
         },
         {
           icon: "phone" as const,
           title: "Phone",
           subtitle: "Contact number",
-          value: businessSettings.phone,
+          value: business?.phone || "Not set",
+        },
+      ],
+    },
+    {
+      section: "Booking Link",
+      items: [
+        {
+          icon: "link" as const,
+          title: "Share Booking Link",
+          subtitle: business ? `/book/${business.slug}` : "Generate your booking link",
+          onPress: handleShareBookingLink,
+          showChevron: true,
         },
       ],
     },

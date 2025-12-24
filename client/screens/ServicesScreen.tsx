@@ -6,7 +6,7 @@ import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { StorageService, Service } from "@/lib/storage";
+import { api, Service } from "@/lib/api";
 import { ServiceCard } from "@/components/ServiceCard";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { ThemedView } from "@/components/ThemedView";
@@ -25,31 +25,34 @@ export default function ServicesScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    initializeDataIfNeeded();
+    initializeBusiness();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadServices();
+      if (api.getBusinessId()) {
+        loadServices();
+      }
     }, [])
   );
 
-  const initializeDataIfNeeded = async () => {
+  const initializeBusiness = async () => {
     try {
-      const existingServices = await StorageService.getServices();
+      await api.getOrCreateBusiness();
+      const existingServices = await api.getServices();
       if (existingServices.length === 0) {
-        await StorageService.initializeDemoData();
-        loadServices();
+        await api.initializeDemoData();
       }
+      loadServices();
     } catch (error) {
-      console.error("Error initializing data:", error);
+      console.error("Error initializing business:", error);
     }
   };
 
   const loadServices = async () => {
     setLoading(true);
     try {
-      const data = await StorageService.getServices();
+      const data = await api.getServices();
       setServices(data);
     } catch (error) {
       console.error("Error loading services:", error);
@@ -59,7 +62,7 @@ export default function ServicesScreen() {
   };
 
   const handleCreateService = () => {
-    navigation.navigate("ServiceEditor");
+    navigation.navigate("ServiceEditor", {});
   };
 
   const handleSelectService = (serviceId: string) => {
@@ -70,7 +73,7 @@ export default function ServicesScreen() {
     <ServiceCard
       name={item.name}
       duration={item.duration}
-      price={item.price}
+      price={item.price / 100}
       bookingRate={Math.floor(Math.random() * 100)}
       onPress={() => handleSelectService(item.id)}
     />

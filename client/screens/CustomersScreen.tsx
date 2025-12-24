@@ -5,7 +5,7 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing } from "@/constants/theme";
-import { StorageService, Customer } from "@/lib/storage";
+import { api, Customer } from "@/lib/api";
 import { CustomerCard } from "@/components/CustomerCard";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -20,31 +20,30 @@ export default function CustomersScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    initializeDataIfNeeded();
+    initializeBusiness();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadCustomers();
+      if (api.getBusinessId()) {
+        loadCustomers();
+      }
     }, [])
   );
 
-  const initializeDataIfNeeded = async () => {
+  const initializeBusiness = async () => {
     try {
-      const existingCustomers = await StorageService.getCustomers();
-      if (existingCustomers.length === 0) {
-        await StorageService.initializeDemoData();
-        loadCustomers();
-      }
+      await api.getOrCreateBusiness();
+      loadCustomers();
     } catch (error) {
-      console.error("Error initializing data:", error);
+      console.error("Error initializing business:", error);
     }
   };
 
   const loadCustomers = async () => {
     setLoading(true);
     try {
-      const data = await StorageService.getCustomers();
+      const data = await api.getCustomers();
       setCustomers(data);
     } catch (error) {
       console.error("Error loading customers:", error);
@@ -56,7 +55,7 @@ export default function CustomersScreen() {
   const handleSelectCustomer = (customer: Customer) => {
     Alert.alert(
       customer.name,
-      `Email: ${customer.email}\nPhone: ${customer.phone || "N/A"}\nTotal Bookings: ${customer.totalBookings}`,
+      `Email: ${customer.email}\nPhone: ${customer.phone || "N/A"}\nTotal Bookings: ${customer.totalBookings || 0}`,
       [{ text: "Close", style: "default" }]
     );
   };
@@ -65,8 +64,8 @@ export default function CustomersScreen() {
     <CustomerCard
       name={item.name}
       email={item.email}
-      phone={item.phone}
-      totalBookings={item.totalBookings}
+      phone={item.phone || undefined}
+      totalBookings={item.totalBookings || 0}
       onPress={() => handleSelectCustomer(item)}
     />
   );

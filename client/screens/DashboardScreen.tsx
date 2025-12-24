@@ -5,7 +5,7 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, AnimationConfig } from "@/constants/theme";
-import { StorageService, Booking, Service } from "@/lib/storage";
+import { api, Booking, DashboardStats } from "@/lib/api";
 import { AnimatedMetricCard } from "@/components/AnimatedMetricCard";
 import { LineGraph } from "@/components/LineGraph";
 import { CircularMeter } from "@/components/CircularMeter";
@@ -18,32 +18,32 @@ export default function DashboardScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme } = useTheme();
 
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    initializeDataIfNeeded();
+    initializeBusiness();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadData();
+      if (api.getBusinessId()) {
+        loadData();
+      }
     }, [])
   );
 
-  const initializeDataIfNeeded = async () => {
+  const initializeBusiness = async () => {
     try {
-      const [existingBookings, existingServices] = await Promise.all([
-        StorageService.getBookings(),
-        StorageService.getServices(),
-      ]);
-      if (existingBookings.length === 0 || existingServices.length === 0) {
-        await StorageService.initializeDemoData();
-        loadData();
+      await api.getOrCreateBusiness();
+      const existingServices = await api.getServices();
+      if (existingServices.length === 0) {
+        await api.initializeDemoData();
       }
+      loadData();
     } catch (error) {
-      console.error("Error initializing data:", error);
+      console.error("Error initializing business:", error);
       setLoading(false);
     }
   };
@@ -51,12 +51,12 @@ export default function DashboardScreen() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [bookingsData, servicesData] = await Promise.all([
-        StorageService.getBookings(),
-        StorageService.getServices(),
+      const [statsData, bookingsData] = await Promise.all([
+        api.getStats(),
+        api.getBookings(),
       ]);
+      setStats(statsData);
       setBookings(bookingsData);
-      setServices(servicesData);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -66,23 +66,24 @@ export default function DashboardScreen() {
 
   const confirmedCount = bookings.filter((b) => b.status === "confirmed").length;
   const pendingCount = bookings.filter((b) => b.status === "pending").length;
-  const totalRevenue = bookings
-    .filter((b) => b.status === "completed" || b.status === "confirmed")
-    .reduce((sum, b) => sum + b.totalPrice, 0);
+  const totalRevenue = stats?.totalRevenue || 0;
 
   const upcomingBookings = bookings
     .filter((b) => b.status !== "cancelled")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(0, 3);
 
-  const graphData = [
-    { label: "Mon", value: Math.floor(Math.random() * 5000) + 2000 },
-    { label: "Tue", value: Math.floor(Math.random() * 5000) + 2000 },
-    { label: "Wed", value: Math.floor(Math.random() * 5000) + 2000 },
-    { label: "Thu", value: Math.floor(Math.random() * 5000) + 2000 },
-    { label: "Fri", value: Math.floor(Math.random() * 5000) + 2000 },
-    { label: "Sat", value: Math.floor(Math.random() * 5000) + 2000 },
-    { label: "Sun", value: Math.floor(Math.random() * 5000) + 2000 },
+  const graphData = stats?.weeklyData?.map((d) => ({
+    label: d.day,
+    value: d.revenue * 100,
+  })) || [
+    { label: "Mon", value: 0 },
+    { label: "Tue", value: 0 },
+    { label: "Wed", value: 0 },
+    { label: "Thu", value: 0 },
+    { label: "Fri", value: 0 },
+    { label: "Sat", value: 0 },
+    { label: "Sun", value: 0 },
   ];
 
   const renderItem = ({ index }: { index: number }) => {
@@ -91,7 +92,7 @@ export default function DashboardScreen() {
         return (
           <AnimatedMetricCard
             title="Total Revenue"
-            value={`$${totalRevenue}`}
+            value={`$${totalRevenue.toFixed(2)}`}
             style={styles.heroCard}
             delay={0}
           >
@@ -123,44 +124,43 @@ export default function DashboardScreen() {
             <ThemedText type="h3" style={styles.sectionTitle}>
               Upcoming Bookings
             </ThemedText>
-            {upcomingBookings.length === 0 && !loading && (
-              <ThemedText type="body" style={styles.emptyText}>
-                No upcoming bookings scheduled
-              </ThemedText>
+            {upcomingBookings.length > 0 ? (
+              upcomingBookings.map((booking) => (
+                <BookingCard
+                  key={booking.id}
+                  customerName={booking.customerName || "Customer"}
+                  serviceName={booking.serviceName || "Service"}
+                  date={booking.date}
+                  time={booking.time}
+                  status={booking.status as "pending" | "confirmed" | "completed" | "cancelled"}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <ThemedText type="body" style={{ color: theme.textSecondary, textAlign: "center" }}>
+                  No upcoming bookings
+                </ThemedText>
+              </View>
             )}
           </View>
         );
       default:
-        const booking = upcomingBookings[index - 3];
-        if (!booking) return null;
-        return (
-          <BookingCard
-            key={booking.id}
-            customerName={booking.customerName}
-            serviceName={booking.serviceName}
-            date={booking.date}
-            time={booking.time}
-            status={booking.status}
-          />
-        );
+        return null;
     }
   };
-
-  const itemCount = upcomingBookings.length > 0 ? 3 + upcomingBookings.length : 3;
 
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        scrollEnabled={!loading}
+        data={[0, 1, 2]}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.toString()}
         contentContainerStyle={{
           paddingTop: headerHeight + Spacing.xl,
           paddingBottom: tabBarHeight + Spacing.xl,
           paddingHorizontal: Spacing.lg,
-          gap: Spacing.xl,
         }}
-        data={Array(itemCount).fill(null)}
-        renderItem={(props) => renderItem({ index: props.index })}
-        keyExtractor={(_, index) => index.toString()}
+        showsVerticalScrollIndicator={false}
       />
     </ThemedView>
   );
@@ -176,19 +176,19 @@ const styles = StyleSheet.create({
   metersContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
-    marginTop: Spacing["2xl"],
+    marginTop: Spacing.xl,
   },
   meterColumn: {
     alignItems: "center",
   },
   section: {
-    paddingVertical: Spacing.lg,
+    marginTop: Spacing.lg,
   },
   sectionTitle: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
-  emptyText: {
-    opacity: 0.6,
-    textAlign: "center",
+  emptyState: {
+    padding: Spacing.xl,
+    alignItems: "center",
   },
 });

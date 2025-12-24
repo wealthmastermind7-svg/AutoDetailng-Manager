@@ -5,7 +5,7 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { StorageService, Booking } from "@/lib/storage";
+import { api, Booking } from "@/lib/api";
 import { CalendarDay } from "@/components/CalendarDay";
 import { BookingCard } from "@/components/BookingCard";
 import { ThemedText } from "@/components/ThemedText";
@@ -24,24 +24,23 @@ export default function CalendarScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    initializeDataIfNeeded();
+    initializeBusiness();
   }, []);
 
   useFocusEffect(
     React.useCallback(() => {
-      loadBookings();
+      if (api.getBusinessId()) {
+        loadBookings();
+      }
     }, [])
   );
 
-  const initializeDataIfNeeded = async () => {
+  const initializeBusiness = async () => {
     try {
-      const existingBookings = await StorageService.getBookings();
-      if (existingBookings.length === 0) {
-        await StorageService.initializeDemoData();
-        loadBookings();
-      }
+      await api.getOrCreateBusiness();
+      loadBookings();
     } catch (error) {
-      console.error("Error initializing data:", error);
+      console.error("Error initializing business:", error);
       setLoading(false);
     }
   };
@@ -49,7 +48,7 @@ export default function CalendarScreen() {
   const loadBookings = async () => {
     setLoading(true);
     try {
-      const data = await StorageService.getBookings();
+      const data = await api.getBookings();
       setBookings(data);
     } catch (error) {
       console.error("Error loading bookings:", error);
@@ -188,11 +187,11 @@ export default function CalendarScreen() {
             data={bookingsForSelectedDate}
             renderItem={({ item }) => (
               <BookingCard
-                customerName={item.customerName}
-                serviceName={item.serviceName}
+                customerName={item.customerName || "Customer"}
+                serviceName={item.serviceName || "Service"}
                 date={item.date}
                 time={item.time}
-                status={item.status}
+                status={item.status as "pending" | "confirmed" | "completed" | "cancelled"}
               />
             )}
             keyExtractor={(item) => item.id}
