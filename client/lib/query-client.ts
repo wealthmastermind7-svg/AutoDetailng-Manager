@@ -8,10 +8,23 @@ export function getApiUrl(): string {
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
   if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+    host = "localhost:5000";
   }
 
-  let url = new URL(`https://${host}`);
+  // For Replit dev domains (contain 'picard.replit.dev'), use localhost for local development
+  if (host.includes("picard.replit.dev") || host.includes("$REPLIT_DEV_DOMAIN")) {
+    host = "localhost:5000";
+  }
+
+  // Check if host already has a protocol
+  let url: URL;
+  if (host.startsWith("http://") || host.startsWith("https://")) {
+    url = new URL(host);
+  } else {
+    // Assume https for production domains, http for localhost
+    const protocol = host.includes("localhost") ? "http" : "https";
+    url = new URL(`${protocol}://${host}`);
+  }
 
   return url.href;
 }

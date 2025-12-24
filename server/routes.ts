@@ -33,6 +33,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/businesses", async (req: Request, res: Response) => {
     try {
       const data = insertBusinessSchema.parse(req.body);
+      
+      // Check if business with this slug already exists
+      const existing = await storage.getBusinessBySlug(data.slug);
+      if (existing) {
+        return res.status(201).json(existing);
+      }
+      
       const business = await storage.createBusiness(data);
       res.status(201).json(business);
     } catch (error) {

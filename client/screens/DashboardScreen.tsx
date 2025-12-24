@@ -35,16 +35,25 @@ export default function DashboardScreen() {
   );
 
   const initializeBusiness = async () => {
-    try {
-      await api.getOrCreateBusiness();
-      const existingServices = await api.getServices();
-      if (existingServices.length === 0) {
-        await api.initializeDemoData();
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await api.getOrCreateBusiness();
+        const existingServices = await api.getServices();
+        if (existingServices.length === 0) {
+          await api.initializeDemoData();
+        }
+        loadData();
+        return;
+      } catch (error) {
+        console.error(`Error initializing business (attempt ${attempt}/${maxRetries}):`, error);
+        if (attempt === maxRetries) {
+          setLoading(false);
+          return;
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
-      loadData();
-    } catch (error) {
-      console.error("Error initializing business:", error);
-      setLoading(false);
     }
   };
 
