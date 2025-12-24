@@ -42,6 +42,16 @@ export default function SettingsScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingField, setEditingField] = useState<"name" | "website" | "phone" | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [demoTypeModalVisible, setDemoTypeModalVisible] = useState(false);
+  const [selectedDemoType, setSelectedDemoType] = useState<string>("salon");
+
+  const DEMO_TYPES = [
+    { id: "salon", label: "Salon", description: "Hair & beauty services" },
+    { id: "autodetailing", label: "Auto Detailing", description: "Car detailing services" },
+    { id: "solar", label: "Solar Installation", description: "Solar energy services" },
+    { id: "coaching", label: "Coaching", description: "Personal & executive coaching" },
+    { id: "fitness", label: "Fitness", description: "Gym & fitness training" },
+  ];
 
   useEffect(() => {
     initializeBusiness();
@@ -216,19 +226,25 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleInitializeDemoData = async () => {
+  const handleInitializeDemoData = async (businessType: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setDemoDataLoading(true);
+    setDemoTypeModalVisible(false);
     try {
-      await api.initializeDemoData();
+      await api.initializeDemoData(businessType);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      Alert.alert("Success", "Demo data has been initialized");
+      Alert.alert("Success", `Demo data for ${DEMO_TYPES.find(t => t.id === businessType)?.label} has been loaded`);
     } catch (error) {
       console.error("Error initializing demo data:", error);
       Alert.alert("Error", "Failed to load demo data. Please try again.");
     } finally {
       setDemoDataLoading(false);
     }
+  };
+
+  const handleShowDemoTypeModal = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setDemoTypeModalVisible(true);
   };
 
   const handleShareBookingLink = async () => {
@@ -384,8 +400,8 @@ export default function SettingsScreen() {
         {
           icon: "refresh-cw" as const,
           title: "Load Demo Data",
-          subtitle: "Populate app with sample data",
-          onPress: handleInitializeDemoData,
+          subtitle: "Choose business type to showcase",
+          onPress: handleShowDemoTypeModal,
           disabled: demoDataLoading,
         },
         {
@@ -507,6 +523,47 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={demoTypeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDemoTypeModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.backgroundDefault, maxWidth: 400 }]}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="h3">Select Business Type</ThemedText>
+              <Pressable onPress={() => setDemoTypeModalVisible(false)} style={styles.closeButton}>
+                <Feather name="x" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+            
+            <View style={styles.demoTypeGrid}>
+              {DEMO_TYPES.map((type) => (
+                <Pressable
+                  key={type.id}
+                  onPress={() => {
+                    setSelectedDemoType(type.id);
+                    handleInitializeDemoData(type.id);
+                  }}
+                  style={[
+                    styles.demoTypeButton,
+                    { backgroundColor: theme.backgroundSecondary }
+                  ]}
+                >
+                  <ThemedText type="body" style={styles.demoTypeLabel}>
+                    {type.label}
+                  </ThemedText>
+                  <ThemedText type="small" style={styles.demoTypeDescription}>
+                    {type.description}
+                  </ThemedText>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -568,5 +625,21 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.lg,
     fontSize: 16,
+  },
+  demoTypeGrid: {
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  demoTypeButton: {
+    padding: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    marginBottom: Spacing.sm,
+  },
+  demoTypeLabel: {
+    fontWeight: "600",
+    marginBottom: Spacing.xs,
+  },
+  demoTypeDescription: {
+    opacity: 0.6,
   },
 });

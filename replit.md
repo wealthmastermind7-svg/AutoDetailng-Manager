@@ -133,11 +133,26 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - QR codes redirect to booking page via generated QR code endpoint
 
 ## Recent Updates (Dec 24, 2025)
-- **Comprehensive Haptic Feedback Enhancement:**
+- **Multi-Business-Type Demo Data Feature:**
+  - Added modal selector in Settings → Data Management → Load Demo Data
+  - 5 pre-configured business types with realistic data:
+    1. **Salon** - Hair & beauty services (haircut, coloring, beard trim, styling)
+    2. **Auto Detailing** - Car detailing services (wash & wax, interior detail, ceramic coating)
+    3. **Solar Installation** - Solar energy services (panel inspection, maintenance, battery setup)
+    4. **Coaching** - Personal & executive coaching (training, group classes, membership, intensive programs)
+    5. **Fitness** - Gym & fitness services (personal training, group classes, membership, nutrition)
+  - Each business type has industry-appropriate services with realistic pricing
+  - Pre-populated customers and sample bookings for each type
+  - Demo data is fully persistent in database (not mock data)
+  - Perfect for showcasing the app to different business verticals
+  - API endpoint: POST `/api/businesses/:businessId/demo-data` accepts `businessType` parameter
+
+- **Comprehensive Haptic Feedback Throughout Entire App:**
   - **Light Haptics (ImpactFeedbackStyle.Light):**
     - All standard buttons (Button component)
     - Service cards tap
     - Customer cards tap
+    - BookingCard tap
     - Calendar day selection
     - Settings rows/options
     - Month navigation (prev/next)
@@ -147,17 +162,15 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
     - Customer card details
     - QR code generation
     - Data operations (clear, reset)
-    - Continue/Next buttons in booking flow
-    - Complete booking confirmation button
-    - Done button in confirmation screen
+    - Continue/Next buttons in booking flow (SelectTimeScreen)
+    - Complete booking confirmation button (CheckoutScreen)
+    - Done button in confirmation screen (ConfirmationScreen)
   - **Heavy Haptics (ImpactFeedbackStyle.Heavy):**
     - Floating action button (primary actions)
-- Fixed booking page 404 error - now serving correctly at /book/:slug
-- Created `getBookingDomain()` helper function to centralize production domain handling
-- Updated all booking link references to use new helper
-- Verified production domain bookflowx.cerolauto.store is properly configured across all features
-- Fixed service creation error by ensuring business ID is initialized in ServiceEditorScreen
+
 - **APP STORE READY (Dec 24, 2025):**
+  - ✅ Multi-business-type demo data with 5 industry verticals
+  - ✅ Comprehensive haptic feedback across entire app
   - ✅ Booking page HTML loaded into memory for production reliability
   - ✅ Business initialization error logging improved
   - ✅ All core services verified working (Web app, API, Booking page)
@@ -165,10 +178,12 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
   - ✅ App configuration (app.json) complete with bundle IDs, icons, splash screen
   - ✅ Version set to 1.0.0
   - ✅ All 5 dashboard screens functional
-  - ✅ Public booking flow fully operational
+  - ✅ Public booking flow fully operational with haptic feedback
   - ✅ Database schema and API integration complete
   - ✅ Service editor functional in both web and Expo Go
   - ✅ API connectivity working across all platforms
+  - ✅ Push notifications fully implemented with permission flow
+  - ✅ QR code generation and sharing for booking links
 
 ## Service Editor Features (Completed Dec 24, 2025)
 ✅ **Fully Functional Service Editor** with:

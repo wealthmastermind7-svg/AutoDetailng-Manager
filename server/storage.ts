@@ -325,19 +325,100 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Demo Data
-  async initializeDemoData(businessId: string): Promise<void> {
+  async initializeDemoData(businessId: string, businessType: string = "salon"): Promise<void> {
     // Check if services already exist
     const existingServices = await this.getServices(businessId);
     if (existingServices.length > 0) return;
 
+    const demoDataTemplates: Record<string, { name: string; services: any[]; customers: any[] }> = {
+      salon: {
+        name: "Signature Salon",
+        services: [
+          { name: "Haircut", duration: 30, price: 4500, description: "Professional haircut" },
+          { name: "Hair Coloring", duration: 120, price: 8500, description: "Full head color treatment" },
+          { name: "Beard Trim", duration: 15, price: 2000, description: "Beard grooming and shaping" },
+          { name: "Styling", duration: 45, price: 5500, description: "Hair styling for special occasions" },
+        ],
+        customers: [
+          { name: "John Smith", email: "john-customer@example.com", phone: "555-0101" },
+          { name: "Sarah Johnson", email: "sarah-customer@example.com", phone: "555-0102" },
+          { name: "Michael Brown", email: "michael-customer@example.com", phone: "555-0103" },
+          { name: "Emma Davis", email: "emma-customer@example.com", phone: "555-0104" },
+        ],
+      },
+      autodetailing: {
+        name: "Premium Auto Detail",
+        services: [
+          { name: "Basic Wash & Wax", duration: 60, price: 7500, description: "Complete exterior wash and wax" },
+          { name: "Interior Detailing", duration: 90, price: 12500, description: "Deep interior cleaning" },
+          { name: "Full Detail Package", duration: 180, price: 25000, description: "Complete interior and exterior detail" },
+          { name: "Ceramic Coating", duration: 120, price: 35000, description: "Professional ceramic coating application" },
+        ],
+        customers: [
+          { name: "Robert Martinez", email: "robert-car@example.com", phone: "555-0201" },
+          { name: "Lisa Anderson", email: "lisa-car@example.com", phone: "555-0202" },
+          { name: "David Wilson", email: "david-car@example.com", phone: "555-0203" },
+          { name: "Jessica Taylor", email: "jessica-car@example.com", phone: "555-0204" },
+        ],
+      },
+      solar: {
+        name: "SunPower Solutions",
+        services: [
+          { name: "Solar Panel Inspection", duration: 60, price: 15000, description: "Complete system evaluation" },
+          { name: "Installation Consultation", duration: 45, price: 0, description: "Free consultation for new installations" },
+          { name: "System Maintenance", duration: 120, price: 8500, description: "Annual maintenance and cleaning" },
+          { name: "Battery Backup Setup", duration: 180, price: 45000, description: "Battery storage system installation" },
+        ],
+        customers: [
+          { name: "James Thompson", email: "james-solar@example.com", phone: "555-0301" },
+          { name: "Patricia Garcia", email: "patricia-solar@example.com", phone: "555-0302" },
+          { name: "Christopher Lee", email: "chris-solar@example.com", phone: "555-0303" },
+          { name: "Nancy White", email: "nancy-solar@example.com", phone: "555-0304" },
+        ],
+      },
+      coaching: {
+        name: "Elite Coaching Academy",
+        services: [
+          { name: "Personal Training Session", duration: 60, price: 10000, description: "One-on-one coaching session" },
+          { name: "Group Coaching Class", duration: 90, price: 6000, description: "Small group coaching session" },
+          { name: "Monthly Membership", duration: 2880, price: 35000, description: "Unlimited group classes" },
+          { name: "Executive Coaching Package", duration: 300, price: 50000, description: "12-week intensive program" },
+        ],
+        customers: [
+          { name: "Mark Johnson", email: "mark-coach@example.com", phone: "555-0401" },
+          { name: "Karen Robinson", email: "karen-coach@example.com", phone: "555-0402" },
+          { name: "Steven Clark", email: "steven-coach@example.com", phone: "555-0403" },
+          { name: "Dorothy Rodriguez", email: "dorothy-coach@example.com", phone: "555-0404" },
+        ],
+      },
+      fitness: {
+        name: "FitZone Gym",
+        services: [
+          { name: "Personal Training Session", duration: 60, price: 8000, description: "One-on-one fitness training" },
+          { name: "Group Fitness Class", duration: 45, price: 2500, description: "Led fitness class" },
+          { name: "Monthly Membership", duration: 2880, price: 9999, description: "Unlimited gym access" },
+          { name: "Nutrition Consultation", duration: 45, price: 5000, description: "Personalized nutrition planning" },
+        ],
+        customers: [
+          { name: "Andrew Jackson", email: "andrew-fit@example.com", phone: "555-0501" },
+          { name: "Susan Miller", email: "susan-fit@example.com", phone: "555-0502" },
+          { name: "Thomas Moore", email: "thomas-fit@example.com", phone: "555-0503" },
+          { name: "Betty Taylor", email: "betty-fit@example.com", phone: "555-0504" },
+        ],
+      },
+    };
+
+    const template = demoDataTemplates[businessType] || demoDataTemplates.salon;
+
     try {
       // Create demo services
-      const demoServices = [
-        { businessId, name: "Haircut", duration: 30, price: 4500, description: "Professional haircut" },
-        { businessId, name: "Hair Coloring", duration: 120, price: 8500, description: "Full head color treatment" },
-        { businessId, name: "Beard Trim", duration: 15, price: 2000, description: "Beard grooming and shaping" },
-        { businessId, name: "Styling", duration: 45, price: 5500, description: "Hair styling for special occasions" },
-      ];
+      const demoServices = template.services.map(s => ({
+        businessId,
+        name: s.name,
+        duration: s.duration,
+        price: s.price,
+        description: s.description,
+      }));
 
       const createdServices: Service[] = [];
       for (const service of demoServices) {
@@ -347,12 +428,12 @@ export class DatabaseStorage implements IStorage {
 
       // Create demo customers with unique identifiers
       const timestamp = Date.now();
-      const demoCustomers = [
-        { businessId, name: "John Smith", email: `john-${timestamp}@example.com`, phone: "555-0101" },
-        { businessId, name: "Sarah Johnson", email: `sarah-${timestamp}@example.com`, phone: "555-0102" },
-        { businessId, name: "Michael Brown", email: `michael-${timestamp}@example.com`, phone: "555-0103" },
-        { businessId, name: "Emma Davis", email: `emma-${timestamp}@example.com`, phone: "555-0104" },
-      ];
+      const demoCustomers = template.customers.map(c => ({
+        businessId,
+        name: c.name,
+        email: `${c.email.split("@")[0]}-${timestamp}@example.com`,
+        phone: c.phone,
+      }));
 
       const createdCustomers: Customer[] = [];
       for (const customer of demoCustomers) {

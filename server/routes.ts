@@ -428,7 +428,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize demo data for a business
   app.post("/api/businesses/:businessId/demo-data", async (req: Request, res: Response) => {
     try {
-      await storage.initializeDemoData(req.params.businessId);
+      const { businessType = "salon" } = req.body;
+      await storage.initializeDemoData(req.params.businessId, businessType);
       res.json({ message: "Demo data initialized" });
     } catch (error) {
       console.error("Error initializing demo data:", error);

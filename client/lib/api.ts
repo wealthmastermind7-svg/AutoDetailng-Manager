@@ -299,8 +299,8 @@ class ApiClient {
     }
   }
 
-  async initializeDemoData(): Promise<void> {
-    await makeRequest<void>("POST", `${this.getBusinessPath()}/demo-data`);
+  async initializeDemoData(businessType: string = "salon"): Promise<void> {
+    await makeRequest<void>("POST", `${this.getBusinessPath()}/demo-data`, { businessType });
   }
 
   async clearAllData(): Promise<void> {
