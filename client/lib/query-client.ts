@@ -26,8 +26,20 @@ export function getApiUrl(): string {
     }
   }
 
-  // Fallback to EXPO_PUBLIC_DOMAIN or localhost
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
+  // For Expo Go (native) - try to use EXPO_PUBLIC_DOMAIN
+  let host = process.env.EXPO_PUBLIC_DOMAIN || "";
+  
+  // Handle case where env var contains literal $REPLIT_DEV_DOMAIN (not interpolated)
+  if (host.includes("$REPLIT_DEV_DOMAIN")) {
+    // For native Expo Go, construct domain from packager hostname if available
+    const packagerHostname = process.env.REACT_NATIVE_PACKAGER_HOSTNAME;
+    if (packagerHostname && !packagerHostname.includes("$")) {
+      host = `${packagerHostname}:5000`;
+    } else {
+      // Try common Replit domain pattern
+      host = "localhost:5000"; // Fallback for local dev
+    }
+  }
 
   if (!host) {
     host = "localhost:5000";
