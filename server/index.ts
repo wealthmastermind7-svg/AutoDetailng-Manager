@@ -17,13 +17,28 @@ function setupCors(app: express.Application) {
   app.use((req, res, next) => {
     const origins = new Set<string>();
 
+    // Allow localhost origins for local development
+    origins.add("http://localhost:8081");
+    origins.add("http://localhost:5000");
+    origins.add("http://127.0.0.1:8081");
+    origins.add("http://127.0.0.1:5000");
+
     if (process.env.REPLIT_DEV_DOMAIN) {
       origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
+      // Also allow the domain without explicit port (for webview)
+      const devDomain = process.env.REPLIT_DEV_DOMAIN;
+      if (!devDomain.includes(":")) {
+        origins.add(`https://${devDomain}:5000`);
+      }
     }
 
     if (process.env.REPLIT_DOMAINS) {
       process.env.REPLIT_DOMAINS.split(",").forEach((d) => {
-        origins.add(`https://${d.trim()}`);
+        const domain = d.trim();
+        origins.add(`https://${domain}`);
+        if (!domain.includes(":")) {
+          origins.add(`https://${domain}:5000`);
+        }
       });
     }
 
@@ -33,7 +48,7 @@ function setupCors(app: express.Application) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header(
         "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS",
+        "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       );
       res.header("Access-Control-Allow-Headers", "Content-Type");
       res.header("Access-Control-Allow-Credentials", "true");

@@ -1,13 +1,15 @@
 import { getApiUrl } from "./query-client";
 
-const API_BASE = getApiUrl();
+function getApiBase(): string {
+  return getApiUrl();
+}
 
 async function makeRequest<T>(
   method: string,
   path: string,
   data?: unknown
 ): Promise<T> {
-  const url = new URL(path, API_BASE);
+  const url = new URL(path, getApiBase());
   const res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -115,7 +117,7 @@ class ApiClient {
 
   async getOrCreateBusiness(): Promise<Business> {
     try {
-      const res = await fetch(`${API_BASE}/api/businesses/demo-business`);
+      const res = await fetch(`${getApiBase()}api/businesses/demo-business`);
       if (res.ok) {
         const business = await res.json();
         this.businessId = business.id;
@@ -136,9 +138,8 @@ class ApiClient {
       this.businessId = newBusiness.id;
       return newBusiness;
     } catch (error) {
-      // If creation fails (might be duplicate), try fetching again
       try {
-        const res = await fetch(`${API_BASE}/api/businesses/demo-business`);
+        const res = await fetch(`${getApiBase()}api/businesses/demo-business`);
         if (res.ok) {
           const business = await res.json();
           this.businessId = business.id;
@@ -152,7 +153,7 @@ class ApiClient {
   async getBusiness(): Promise<Business | null> {
     if (!this.businessId) return null;
     try {
-      const res = await fetch(`${API_BASE}/api/businesses/${this.businessId}`);
+      const res = await fetch(`${getApiBase()}api/businesses/${this.businessId}`);
       if (!res.ok) return null;
       return res.json();
     } catch {
@@ -166,7 +167,7 @@ class ApiClient {
 
   async getServices(): Promise<Service[]> {
     try {
-      const res = await fetch(`${API_BASE}${this.getBusinessPath()}/services`);
+      const res = await fetch(`${getApiBase()}${this.getBusinessPath()}/services`);
       if (!res.ok) return [];
       return res.json();
     } catch {
@@ -176,7 +177,7 @@ class ApiClient {
 
   async getService(id: string): Promise<Service | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/services/${id}`);
+      const res = await fetch(`${getApiBase()}api/services/${id}`);
       if (!res.ok) return null;
       return res.json();
     } catch {
@@ -198,7 +199,7 @@ class ApiClient {
 
   async getCustomers(): Promise<Customer[]> {
     try {
-      const res = await fetch(`${API_BASE}${this.getBusinessPath()}/customers`);
+      const res = await fetch(`${getApiBase()}${this.getBusinessPath()}/customers`);
       if (!res.ok) return [];
       return res.json();
     } catch {
@@ -208,7 +209,7 @@ class ApiClient {
 
   async getCustomer(id: string): Promise<Customer | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/customers/${id}`);
+      const res = await fetch(`${getApiBase()}api/customers/${id}`);
       if (!res.ok) return null;
       return res.json();
     } catch {
@@ -227,8 +228,8 @@ class ApiClient {
   async getBookings(date?: string): Promise<Booking[]> {
     try {
       const url = date 
-        ? `${API_BASE}${this.getBusinessPath()}/bookings?date=${date}`
-        : `${API_BASE}${this.getBusinessPath()}/bookings`;
+        ? `${getApiBase()}${this.getBusinessPath()}/bookings?date=${date}`
+        : `${getApiBase()}${this.getBusinessPath()}/bookings`;
       const res = await fetch(url);
       if (!res.ok) return [];
       return res.json();
@@ -239,7 +240,7 @@ class ApiClient {
 
   async getBooking(id: string): Promise<Booking | null> {
     try {
-      const res = await fetch(`${API_BASE}/api/bookings/${id}`);
+      const res = await fetch(`${getApiBase()}api/bookings/${id}`);
       if (!res.ok) return null;
       return res.json();
     } catch {
@@ -257,7 +258,7 @@ class ApiClient {
 
   async getStats(): Promise<DashboardStats> {
     try {
-      const res = await fetch(`${API_BASE}${this.getBusinessPath()}/stats`);
+      const res = await fetch(`${getApiBase()}${this.getBusinessPath()}/stats`);
       if (!res.ok) {
         return {
           totalRevenue: 0,
@@ -286,8 +287,8 @@ class ApiClient {
   async getTimeSlots(date: string, serviceId?: string): Promise<TimeSlot[]> {
     try {
       const url = serviceId 
-        ? `${API_BASE}${this.getBusinessPath()}/slots/${date}?serviceId=${serviceId}`
-        : `${API_BASE}${this.getBusinessPath()}/slots/${date}`;
+        ? `${getApiBase()}${this.getBusinessPath()}/slots/${date}?serviceId=${serviceId}`
+        : `${getApiBase()}${this.getBusinessPath()}/slots/${date}`;
       const res = await fetch(url);
       if (!res.ok) return [];
       const data = await res.json();
@@ -307,7 +308,7 @@ class ApiClient {
 
   async getQRCode(): Promise<{ qrCode: string; bookingUrl: string } | null> {
     try {
-      const res = await fetch(`${API_BASE}${this.getBusinessPath()}/qrcode`);
+      const res = await fetch(`${getApiBase()}${this.getBusinessPath()}/qrcode`);
       if (!res.ok) return null;
       return res.json();
     } catch {
