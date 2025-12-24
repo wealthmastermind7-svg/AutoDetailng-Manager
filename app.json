@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bookflow.app",
+      "bundleIdentifier": "com.cerolauto.bookflowx",
       "infoPlist": {
         "UIBackgroundModes": ["remote-notification"]
       }
@@ -21,7 +21,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.bookflow.app",
+      "package": "com.cerolauto.bookflowx",
       "useNextNotificationsApi": true
     },
     "web": {
@@ -29,6 +29,14 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
       [
         "expo-splash-screen",
         {
