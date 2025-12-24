@@ -7,7 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "bookflow",
     "userInterfaceStyle": "automatic",
-    "jsEngine": "jsc",
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.cerolauto.bookflowx",
