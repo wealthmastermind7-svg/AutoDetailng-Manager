@@ -36,11 +36,13 @@ export function SettingsRow({
   const { theme } = useTheme();
 
   const textColor = disabled ? theme.textSecondary : destructive ? theme.error : theme.text;
+  const iconBgColor = destructive ? theme.error : theme.backgroundSecondary;
+  const rowBgColor = destructive ? theme.error + "15" : theme.backgroundDefault; // Add slight red tint
 
   const content = (
-    <View style={[styles.row, { backgroundColor: theme.backgroundDefault }]}>
-      <View style={[styles.iconContainer, { backgroundColor: theme.backgroundSecondary }]}>
-        <Feather name={icon} size={20} color={textColor} />
+    <View style={[styles.row, { backgroundColor: rowBgColor }]}>
+      <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
+        <Feather name={icon} size={20} color={destructive ? "white" : textColor} />
       </View>
       <View style={styles.content}>
         <ThemedText type="body" style={[styles.title, { color: textColor }]}>
