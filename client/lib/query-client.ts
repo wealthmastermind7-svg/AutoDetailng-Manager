@@ -64,6 +64,27 @@ export function getApiUrl(): string {
  * @returns {string} The clean domain (e.g., "bookflowx.cerolauto.store")
  */
 export function getBookingDomain(): string {
+  // In browser, check window.location first (this is the most reliable)
+  if (typeof window !== "undefined" && window.location) {
+    const currentHost = window.location.hostname;
+    
+    // If running on Replit domain, use localhost for development
+    if (currentHost.includes("replit.dev") || currentHost.includes("replit.app")) {
+      return "localhost:5000";
+    }
+    
+    // If running on custom production domain or localhost, use it
+    if (currentHost.includes("cerolauto.store") || currentHost === "localhost" || currentHost === "127.0.0.1") {
+      // For production domain, just use the domain
+      if (currentHost.includes("cerolauto.store")) {
+        return currentHost;
+      }
+      // For localhost, include port
+      return currentHost === "localhost" ? "localhost:5000" : currentHost;
+    }
+  }
+
+  // For Expo Go (native) - use environment variable
   let domain = process.env.EXPO_PUBLIC_DOMAIN || "localhost:5000";
 
   // For Replit dev domains, use localhost for local development
