@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Alert, Share, Platform } from "react-native";
+import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { Image } from "expo-image";
+import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { api, Business } from "@/lib/api";
 import { SettingsRow } from "@/components/SettingsRow";
 import { ThemedView } from "@/components/ThemedView";
@@ -22,6 +24,9 @@ export default function SettingsScreen() {
   const [loading, setLoading] = useState(false);
   const [demoDataLoading, setDemoDataLoading] = useState(false);
   const [clearDataLoading, setClearDataLoading] = useState(false);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [bookingUrl, setBookingUrl] = useState<string>("");
 
   useEffect(() => {
     initializeBusiness();
@@ -100,14 +105,42 @@ export default function SettingsScreen() {
 
   const handleShareBookingLink = async () => {
     if (!business) return;
-    const bookingUrl = `${process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app"}/book/${business.slug}`;
+    const url = `${process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app"}/book/${business.slug}`;
     try {
       await Share.share({
-        message: `Book an appointment with ${business.name}: https://${bookingUrl}`,
-        url: `https://${bookingUrl}`,
+        message: `Book an appointment with ${business.name}: https://${url}`,
+        url: `https://${url}`,
       });
     } catch (error) {
       console.error("Error sharing:", error);
+    }
+  };
+
+  const handleShowQRCode = async () => {
+    try {
+      const data = await api.getQRCode();
+      if (data) {
+        setQrCode(data.qrCode);
+        setBookingUrl(data.bookingUrl);
+        setQrModalVisible(true);
+      } else {
+        Alert.alert("Error", "Could not generate QR code");
+      }
+    } catch (error) {
+      console.error("Error getting QR code:", error);
+      Alert.alert("Error", "Failed to generate QR code");
+    }
+  };
+
+  const handleShareQRCode = async () => {
+    if (!business || !bookingUrl) return;
+    try {
+      await Share.share({
+        message: `Scan to book an appointment with ${business.name}: ${bookingUrl}`,
+        url: bookingUrl,
+      });
+    } catch (error) {
+      console.error("Error sharing QR code:", error);
     }
   };
 
@@ -143,6 +176,13 @@ export default function SettingsScreen() {
           title: "Share Booking Link",
           subtitle: business ? `/book/${business.slug}` : "Generate your booking link",
           onPress: handleShareBookingLink,
+          showChevron: true,
+        },
+        {
+          icon: "grid" as const,
+          title: "Show QR Code",
+          subtitle: "Display QR code for customers to scan",
+          onPress: handleShowQRCode,
           showChevron: true,
         },
       ],
@@ -216,6 +256,45 @@ export default function SettingsScreen() {
         )}
         keyExtractor={(item) => item.section}
       />
+
+      <Modal
+        visible={qrModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.background }]}>
+            <View style={styles.modalHeader}>
+              <ThemedText type="h3">Booking QR Code</ThemedText>
+              <Pressable onPress={() => setQrModalVisible(false)} style={styles.closeButton}>
+                <Feather name="x" size={24} color={theme.text} />
+              </Pressable>
+            </View>
+            
+            {qrCode ? (
+              <View style={styles.qrContainer}>
+                <Image
+                  source={{ uri: qrCode }}
+                  style={styles.qrImage}
+                  contentFit="contain"
+                />
+                <ThemedText type="small" style={styles.qrUrl}>
+                  {bookingUrl}
+                </ThemedText>
+              </View>
+            ) : null}
+            
+            <View style={styles.modalActions}>
+              <Button
+                title="Share QR Code"
+                onPress={handleShareQRCode}
+                variant="primary"
+              />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ThemedView>
   );
 }
@@ -223,6 +302,44 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: Spacing.xl,
+  },
+  modalContent: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.lg,
+  },
+  closeButton: {
+    padding: Spacing.sm,
+  },
+  qrContainer: {
+    alignItems: "center",
+    marginBottom: Spacing.xl,
+  },
+  qrImage: {
+    width: 250,
+    height: 250,
+    marginBottom: Spacing.md,
+  },
+  qrUrl: {
+    textAlign: "center",
+    opacity: 0.7,
+  },
+  modalActions: {
+    gap: Spacing.md,
   },
   section: {
     marginBottom: Spacing["3xl"],

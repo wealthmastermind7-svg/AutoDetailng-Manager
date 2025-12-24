@@ -9,6 +9,8 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import path from "path";
+import QRCode from "qrcode";
+import { sendBookingConfirmation } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // === BUSINESSES API ===
@@ -244,6 +246,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         businessId: req.params.businessId,
       });
       const booking = await storage.createBooking(data);
+      
+      // Send email confirmation
+      if (req.body.customerEmail && req.body.customerName) {
+        const business = await storage.getBusiness(req.params.businessId);
+        const service = await storage.getService(data.serviceId);
+        
+        sendBookingConfirmation({
+          customerName: req.body.customerName,
+          customerEmail: req.body.customerEmail,
+          serviceName: service?.name || "Service",
+          date: data.date,
+          time: data.time,
+          price: data.totalPrice,
+          confirmationNumber: booking.id.slice(0, 8).toUpperCase(),
+          businessName: business?.name || "Business"
+        }).catch(err => console.error("Failed to send confirmation email:", err));
+      }
+      
       res.status(201).json(booking);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -388,6 +408,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting stats:", error);
       res.status(500).json({ error: "Failed to get stats" });
+    }
+  });
+
+  // === QR CODE API ===
+  
+  // Generate QR code for booking link
+  app.get("/api/businesses/:businessId/qrcode", async (req: Request, res: Response) => {
+    try {
+      const business = await storage.getBusiness(req.params.businessId);
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      
+      const host = req.get('host') || 'localhost:5000';
+      const protocol = req.protocol;
+      const bookingUrl = `${protocol}://${host}/book/${business.slug}`;
+      
+      const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      res.json({ 
+        qrCode: qrCodeDataUrl,
+        bookingUrl 
+      });
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      res.status(500).json({ error: "Failed to generate QR code" });
     }
   });
 
