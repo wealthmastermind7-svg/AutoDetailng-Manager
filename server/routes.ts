@@ -1,5 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "node:http";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import { storage } from "./storage";
 import { 
   insertBusinessSchema, 
@@ -11,6 +13,10 @@ import { z } from "zod";
 import path from "path";
 import QRCode from "qrcode";
 import { sendBookingConfirmation } from "./email";
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // === BUSINESSES API ===
@@ -428,9 +434,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business not found" });
       }
       
-      const host = req.get('host') || 'localhost:5000';
-      const protocol = req.protocol;
-      const bookingUrl = `${protocol}://${host}/book/${business.slug}`;
+      // Use production domain if available, otherwise use request host
+      let bookingUrl: string;
+      const domain = process.env.EXPO_PUBLIC_DOMAIN;
+      
+      if (domain && !domain.includes('localhost')) {
+        // Strip any existing protocol from the domain
+        const cleanDomain = domain.replace(/^https?:\/\//, '');
+        bookingUrl = `https://${cleanDomain}/book/${business.slug}`;
+      } else {
+        // Fallback to request host for local development
+        const host = req.get('host') || 'localhost:5000';
+        const protocol = req.protocol;
+        bookingUrl = `${protocol}://${host}/book/${business.slug}`;
+      }
       
       const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl, {
         width: 300,
