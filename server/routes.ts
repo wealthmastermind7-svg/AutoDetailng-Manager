@@ -39,6 +39,19 @@ async function loadBookingHtml() {
   console.warn("Warning: Could not load booking.html. Paths tried:", paths);
 }
 
+// Helper function to generate booking URL
+function getBookingUrlForBusiness(business: any, req: Request): string {
+  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  if (domain && !domain.includes('localhost')) {
+    const cleanDomain = domain.replace(/^https?:\/\//, '');
+    return `https://${cleanDomain}/book/${business.slug}`;
+  } else {
+    const host = req.get('host') || 'localhost:5000';
+    const protocol = req.protocol;
+    return `${protocol}://${host}/book/${business.slug}`;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Load booking HTML at startup
   await loadBookingHtml();
@@ -52,7 +65,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
       }
-      res.json(business);
+      const bookingUrl = getBookingUrlForBusiness(business, req);
+      res.json({ ...business, bookingUrl });
     } catch (error) {
       console.error("Error getting business:", error);
       res.status(500).json({ error: "Failed to get business" });
@@ -67,11 +81,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if business with this slug already exists
       const existing = await storage.getBusinessBySlug(data.slug);
       if (existing) {
-        return res.status(201).json(existing);
+        const bookingUrl = getBookingUrlForBusiness(existing, req);
+        return res.status(201).json({ ...existing, bookingUrl });
       }
       
       const business = await storage.createBusiness(data);
-      res.status(201).json(business);
+      const bookingUrl = getBookingUrlForBusiness(business, req);
+      res.status(201).json({ ...business, bookingUrl });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
@@ -89,7 +105,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!business) {
         return res.status(404).json({ error: "Business not found" });
       }
-      res.json(business);
+      const bookingUrl = getBookingUrlForBusiness(business, req);
+      res.json({ ...business, bookingUrl });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: error.errors });
@@ -458,20 +475,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Business not found" });
       }
       
-      // Use production domain if available, otherwise use request host
-      let bookingUrl: string;
-      const domain = process.env.EXPO_PUBLIC_DOMAIN;
-      
-      if (domain && !domain.includes('localhost')) {
-        // Strip any existing protocol from the domain
-        const cleanDomain = domain.replace(/^https?:\/\//, '');
-        bookingUrl = `https://${cleanDomain}/book/${business.slug}`;
-      } else {
-        // Fallback to request host for local development
-        const host = req.get('host') || 'localhost:5000';
-        const protocol = req.protocol;
-        bookingUrl = `${protocol}://${host}/book/${business.slug}`;
-      }
+      // Use helper function to generate booking URL
+      const bookingUrl = getBookingUrlForBusiness(business, req);
       
       // Check if requesting as image (PNG) or JSON
       const format = req.query.format || 'json';

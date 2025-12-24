@@ -114,11 +114,11 @@ export default function SettingsScreen() {
 
   const handleShareBookingLink = async () => {
     if (!business) return;
-    const cleanDomain = getBookingDomain();
-    const bookingLink = `https://${cleanDomain}/book/${business.slug}`;
+    const bookingLink = business.bookingUrl || `https://${getBookingDomain()}/book/${business.slug}`;
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await Share.share({
-        message: `Book an appointment:\n${cleanDomain}/book/${business.slug}\n\nVisit to schedule with ${business.name}`,
+        message: `Book an appointment:\n${bookingLink}\n\nVisit to schedule with ${business.name}`,
         url: bookingLink,
         title: `${business.name} - Booking`,
       });
@@ -220,7 +220,7 @@ export default function SettingsScreen() {
         {
           icon: "link" as const,
           title: "Share Booking Link",
-          subtitle: business ? `${getBookingDomain()}/book/${business.slug}` : "Generate your booking link",
+          subtitle: business?.bookingUrl || `${getBookingDomain()}/book/${business?.slug}`,
           onPress: handleShareBookingLink,
           showChevron: true,
         },

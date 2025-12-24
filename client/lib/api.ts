@@ -39,6 +39,7 @@ export interface Business {
   address?: string | null;
   timezone?: string | null;
   notificationsEnabled?: boolean | null;
+  bookingUrl?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
