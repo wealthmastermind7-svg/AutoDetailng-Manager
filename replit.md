@@ -90,6 +90,12 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
    - Fixed getApiUrl() to fallback gracefully to localhost:5000 if not set
    - Properly handles both http and https protocols
 
+3. **Demo Data Initialization Failures in Production** - RESOLVED
+   - Issue: Demo data endpoint was returning error on production domain
+   - Root Cause: Demo customer emails were hardcoded (not unique), causing database constraint violations on repeated calls
+   - Fix: Demo customers now use unique email addresses with timestamps (e.g., john-{timestamp}@example.com)
+   - Status: Fixed and tested locally, production domain needs re-deployment to apply changes
+
 ## Testing & Deployment
 - Local dev: Run `npm run server:dev && npm run expo:dev`, access web version at http://localhost:8081
 - TestFlight: App needs static build with `EXPO_PUBLIC_DOMAIN=elegant-canvas--wealthmastermin.replit.app`
