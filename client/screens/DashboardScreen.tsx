@@ -46,9 +46,11 @@ export default function DashboardScreen() {
         loadData();
         return;
       } catch (error) {
-        console.error(`Error initializing business (attempt ${attempt}/${maxRetries}):`, error);
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error(`Error initializing business (attempt ${attempt}/${maxRetries}): ${errorMsg}`);
         if (attempt === maxRetries) {
-          setLoading(false);
+          // Show loading complete even if initialization fails
+          loadData();
           return;
         }
         // Wait before retrying
