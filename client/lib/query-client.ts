@@ -5,14 +5,31 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
+  // In browser, check window.location first
+  if (typeof window !== "undefined" && window.location) {
+    const currentHost = window.location.hostname;
+    const currentProtocol = window.location.protocol;
+    
+    // If running on Replit domain, use port 5000 on the same host
+    if (currentHost.includes("replit.dev") || currentHost.includes("replit.app")) {
+      return `${currentProtocol}//${currentHost}:5000/`;
+    }
+    
+    // If running on custom production domain
+    if (currentHost.includes("cerolauto.store")) {
+      return `${currentProtocol}//${currentHost}/`;
+    }
+    
+    // Local development - use localhost:5000
+    if (currentHost === "localhost" || currentHost === "127.0.0.1") {
+      return "http://localhost:5000/";
+    }
+  }
+
+  // Fallback to EXPO_PUBLIC_DOMAIN or localhost
   let host = process.env.EXPO_PUBLIC_DOMAIN;
 
   if (!host) {
-    host = "localhost:5000";
-  }
-
-  // For Replit dev domains (contain 'picard.replit.dev'), use localhost for local development
-  if (host.includes("picard.replit.dev") || host.includes("$REPLIT_DEV_DOMAIN")) {
     host = "localhost:5000";
   }
 
