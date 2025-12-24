@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable } from "react-native";
+import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable, ActivityIndicator } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -108,7 +108,7 @@ export default function SettingsScreen() {
     const url = `${process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app"}/book/${business.slug}`;
     try {
       await Share.share({
-        message: `Book an appointment with ${business.name}: https://${url}`,
+        message: `Book an appointment with ${business.name}`,
         url: `https://${url}`,
       });
     } catch (error) {
@@ -135,9 +135,11 @@ export default function SettingsScreen() {
   const handleShareQRCode = async () => {
     if (!business || !bookingUrl) return;
     try {
+      // Share just the link - users can scan the QR code they see in the modal
       await Share.share({
-        message: `Scan to book an appointment with ${business.name}: ${bookingUrl}`,
+        message: `Scan to book an appointment with ${business.name}`,
         url: bookingUrl,
+        title: "Booking QR Code",
       });
     } catch (error) {
       console.error("Error sharing QR code:", error);
