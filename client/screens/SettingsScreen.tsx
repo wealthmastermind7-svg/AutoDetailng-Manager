@@ -105,11 +105,14 @@ export default function SettingsScreen() {
 
   const handleShareBookingLink = async () => {
     if (!business) return;
-    const url = `${process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app"}/book/${business.slug}`;
+    const domain = process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app";
+    const cleanDomain = domain.replace(/^https?:\/\//, '');
+    const bookingLink = `https://${cleanDomain}/book/${business.slug}`;
     try {
       await Share.share({
-        message: `Book an appointment with ${business.name}`,
-        url: `https://${url}`,
+        message: `Book an appointment:\n${cleanDomain}/book/${business.slug}\n\nVisit to schedule with ${business.name}`,
+        url: bookingLink,
+        title: `${business.name} - Booking`,
       });
     } catch (error) {
       console.error("Error sharing:", error);
@@ -132,14 +135,16 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleShareQRCode = async () => {
-    if (!business || !bookingUrl) return;
+  const handleDownloadQRCode = async () => {
+    if (!business) return;
     try {
-      // Share just the link - users can scan the QR code they see in the modal
+      const cleanDomain = (process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app").replace(/^https?:\/\//, '');
+      const qrImageUrl = `/api/businesses/${business.id}/qrcode?format=image`;
+      const fullUrl = `https://${cleanDomain}${qrImageUrl}`;
       await Share.share({
-        message: `Scan to book an appointment with ${business.name}`,
-        url: bookingUrl,
-        title: "Booking QR Code",
+        url: fullUrl,
+        message: `Share this QR code to book appointments with ${business.name}\n\nVanity link: ${cleanDomain}/book/${business.slug}`,
+        title: `${business.name} - Booking QR Code`,
       });
     } catch (error) {
       console.error("Error sharing QR code:", error);
@@ -176,7 +181,7 @@ export default function SettingsScreen() {
         {
           icon: "link" as const,
           title: "Share Booking Link",
-          subtitle: business ? `/book/${business.slug}` : "Generate your booking link",
+          subtitle: business ? `${(process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app").replace(/^https?:\/\//, '')}/book/${business.slug}` : "Generate your booking link",
           onPress: handleShareBookingLink,
           showChevron: true,
         },
@@ -288,8 +293,8 @@ export default function SettingsScreen() {
             ) : null}
             
             <View style={styles.modalActions}>
-              <Button onPress={handleShareQRCode}>
-                Share QR Code
+              <Button onPress={handleDownloadQRCode}>
+                Share QR Code Image
               </Button>
             </View>
           </View>

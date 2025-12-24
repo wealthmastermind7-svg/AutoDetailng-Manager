@@ -59,4 +59,4 @@ ensurePreviewReachable = "/status"
 [userenv]
 
 [userenv.shared]
-EXPO_PUBLIC_DOMAIN = "elegant-canvas--wealthmastermin.replit.app"
+EXPO_PUBLIC_DOMAIN = "bookflowx.cerolauto.store"

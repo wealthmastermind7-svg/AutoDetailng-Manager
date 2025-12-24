@@ -449,19 +449,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         bookingUrl = `${protocol}://${host}/book/${business.slug}`;
       }
       
-      const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl, {
-        width: 300,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      });
+      // Check if requesting as image (PNG) or JSON
+      const format = req.query.format || 'json';
       
-      res.json({ 
-        qrCode: qrCodeDataUrl,
-        bookingUrl 
-      });
+      if (format === 'image' || format === 'png') {
+        // Return as PNG image file for direct download/sharing
+        const qrCodeBuffer = await new Promise<Buffer>((resolve, reject) => {
+          QRCode.toBuffer(bookingUrl, {
+            width: 300,
+            margin: 2,
+            color: {
+              dark: '#000000',
+              light: '#FFFFFF'
+            }
+          }, (err, buffer) => {
+            if (err) reject(err);
+            else resolve(buffer);
+          });
+        });
+        
+        res.type('image/png');
+        res.setHeader('Content-Disposition', `attachment; filename="${business.slug}-booking-qr.png"`);
+        res.send(qrCodeBuffer);
+      } else {
+        // Return as JSON with base64 data URL
+        const qrCodeDataUrl = await QRCode.toDataURL(bookingUrl, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        
+        res.json({ 
+          qrCode: qrCodeDataUrl,
+          bookingUrl,
+          qrImageUrl: `/api/businesses/${business.id}/qrcode?format=image`
+        });
+      }
     } catch (error) {
       console.error("Error generating QR code:", error);
       res.status(500).json({ error: "Failed to generate QR code" });
