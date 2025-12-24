@@ -498,21 +498,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve public booking page (client-side routing)
   app.get("/book/:slug", (req: Request, res: Response) => {
-    const bookingPath = path.resolve(__dirname, "templates/booking.html");
+    // Try multiple paths to handle both dev and production builds
+    const paths = [
+      path.resolve(__dirname, "templates/booking.html"),
+      path.resolve(process.cwd(), "server/templates/booking.html"),
+      path.resolve(process.cwd(), "templates/booking.html"),
+    ];
+    
+    let bookingPath = paths[0];
+    for (const p of paths) {
+      try {
+        require("fs").accessSync(p);
+        bookingPath = p;
+        break;
+      } catch {}
+    }
+    
     try {
       res.sendFile(bookingPath);
     } catch (error) {
-      console.error(`Failed to serve booking page from ${bookingPath}:`, error);
+      console.error(`Failed to serve booking page. Tried paths: ${paths.join(", ")}`, error);
       res.status(404).json({ error: "Booking page not found" });
     }
   });
   
   app.get("/book/:slug/*", (req: Request, res: Response) => {
-    const bookingPath = path.resolve(__dirname, "templates/booking.html");
+    // Try multiple paths to handle both dev and production builds
+    const paths = [
+      path.resolve(__dirname, "templates/booking.html"),
+      path.resolve(process.cwd(), "server/templates/booking.html"),
+      path.resolve(process.cwd(), "templates/booking.html"),
+    ];
+    
+    let bookingPath = paths[0];
+    for (const p of paths) {
+      try {
+        require("fs").accessSync(p);
+        bookingPath = p;
+        break;
+      } catch {}
+    }
+    
     try {
       res.sendFile(bookingPath);
     } catch (error) {
-      console.error(`Failed to serve booking page from ${bookingPath}:`, error);
+      console.error(`Failed to serve booking page. Tried paths: ${paths.join(", ")}`, error);
       res.status(404).json({ error: "Booking page not found" });
     }
   });
