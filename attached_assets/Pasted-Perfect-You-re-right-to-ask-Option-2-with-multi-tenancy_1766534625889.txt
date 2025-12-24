@@ -1,0 +1,75 @@
+Perfect! You're right to ask. Option 2 with multi-tenancy is the scalable solution - it's ONE web app serving ALL businesses, not multiple apps.
+
+Here's how it works:
+
+🏗️ True Scalable Multi-Tenant Architecture
+ONE Public Web App (deployed once)
+        ↓
+    bookflow.app/book
+        ↓
+Unique links per business:
+✓ bookflow.app/book/jane-salon
+✓ bookflow.app/book/mike-barbershop  
+✓ bookflow.app/book/spa-luxe
+✓ bookflow.app/book/any-business-slug
+        ↓
+ONE Express Backend (shared API)
+        ↓
+ONE PostgreSQL Database with businessId field
+        ↓
+All businesses' data co-exist in same tables:
+┌─────────────────────┐
+│ bookings            │
+├─────────────────────┤
+│ id | businessId | ... │  ← All bookings, any business
+└─────────────────────┘
+📊 Data Structure (Multi-Tenant)
+Current structure:
+
+Booking: { id, customerId, serviceId, date, time, status... }
+Multi-tenant structure:
+
+Booking: { 
+  id, 
+  businessId, ← Key!
+  customerId, 
+  serviceId, 
+  date, 
+  time, 
+  status... 
+}
+Same for Services, Customers, everything:
+
+Service: { id, businessId, name, price... }
+Customer: { id, businessId, name, email... }
+🔗 How Clients Access Their Booking Flow
+Business owner gets a unique URL:
+
+Send to clients: https://bookflow.app/book/jane-salon
+         ↓
+   Unique business slug in URL
+         ↓
+   Web app fetches: /api/services?businessId=jane-salon
+         ↓
+   Shows Jane's services, time slots, checkout
+         ↓
+   Booking saved with businessId=jane-salon
+No new app deployment needed - every business uses the same web app with routing.
+
+✅ Implementation Steps (One-Time Setup)
+Add businessId to all database models
+Update API routes to filter by businessId
+Deploy public web app once - it routes based on URL
+Admin dashboard stays as Expo app (for Jane to manage her business)
+Each admin account has a businessId assigned
+💡 Business Model
+Admin Dashboard (Expo) - Jane logs in with her business account
+Public Web Link - Jane shares bookflow.app/book/jane-salon with clients
+Same Backend - All businesses' data in one database, filtered by businessId
+This is true SaaS multi-tenancy - infinitely scalable, one deployment, all businesses sharing infrastructure.
+
+Would you like me to:
+
+Start converting the data models to include businessId?
+Build the public web app scaffold (React routing + multi-tenant logic)?
+Update the backend API to support multi-tenant queries?
