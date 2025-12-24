@@ -125,15 +125,28 @@ class ApiClient {
       console.log("Demo business not found, creating...");
     }
 
-    const newBusiness = await makeRequest<Business>("POST", "/api/businesses", {
-      name: "My Business",
-      slug: "demo-business",
-      description: "Demo business for testing",
-      phone: "+1 (555) 123-4567",
-      email: "demo@bookflow.app",
-    });
-    this.businessId = newBusiness.id;
-    return newBusiness;
+    try {
+      const newBusiness = await makeRequest<Business>("POST", "/api/businesses", {
+        name: "My Business",
+        slug: "demo-business",
+        description: "Demo business for testing",
+        phone: "+1 (555) 123-4567",
+        email: "demo@bookflow.app",
+      });
+      this.businessId = newBusiness.id;
+      return newBusiness;
+    } catch (error) {
+      // If creation fails (might be duplicate), try fetching again
+      try {
+        const res = await fetch(`${API_BASE}/api/businesses/demo-business`);
+        if (res.ok) {
+          const business = await res.json();
+          this.businessId = business.id;
+          return business;
+        }
+      } catch {}
+      throw error;
+    }
   }
 
   async getBusiness(): Promise<Business | null> {
