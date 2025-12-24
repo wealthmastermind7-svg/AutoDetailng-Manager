@@ -8,6 +8,7 @@ import {
   Pressable,
   ScrollView,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -16,7 +17,7 @@ import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
-import { StorageService, Service, ServiceLink } from "@/lib/storage";
+import { api, Service } from "@/lib/api";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
@@ -39,15 +40,11 @@ export default function ServiceEditorScreen() {
     duration: 30,
     price: 0,
     description: "",
-    links: [],
   });
 
   const [activeTab, setActiveTab] = useState<"details" | "links">("details");
-  const [newLink, setNewLink] = useState({
-    title: "",
-    url: "",
-    category: "external" as const,
-  });
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const serviceId = (route.params as any)?.serviceId;
 
@@ -58,12 +55,16 @@ export default function ServiceEditorScreen() {
   }, [serviceId]);
 
   const loadService = async () => {
-    if (serviceId) {
-      const services = await StorageService.getServices();
-      const found = services.find((s) => s.id === serviceId);
+    setLoading(true);
+    try {
+      const found = await api.getService(serviceId);
       if (found) {
         setService(found);
       }
+    } catch (error) {
+      console.error("Error loading service:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,106 +74,48 @@ export default function ServiceEditorScreen() {
       return;
     }
 
-    if (service.duration === 0 || service.duration === undefined) {
+    if (!service.duration || service.duration === 0) {
       alert("Please set a duration");
       return;
     }
 
+    setSaving(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       if (serviceId) {
-        await StorageService.updateService(serviceId, service as Service);
-      } else {
-        const newService: Service = {
-          id: Date.now().toString(),
-          name: service.name || "",
-          duration: service.duration || 30,
+        await api.updateService(serviceId, {
+          name: service.name,
+          duration: service.duration,
           price: service.price || 0,
           description: service.description,
-          links: service.links || [],
-        };
-        await StorageService.addService(newService);
+        });
+      } else {
+        if (!api.getBusinessId()) {
+          throw new Error("Business ID not set");
+        }
+        await api.createService({
+          name: service.name,
+          duration: service.duration,
+          price: service.price || 0,
+          description: service.description,
+        });
       }
       navigation.goBack();
     } catch (error) {
       console.error("Error saving service:", error);
-      alert("Error saving service");
+      alert("Error saving service: " + (error as Error).message);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleAddLink = () => {
-    if (!newLink.title.trim() || !newLink.url.trim()) {
-      alert("Please fill in all link fields");
-      return;
-    }
-
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const link: ServiceLink = {
-        id: Date.now().toString(),
-        title: newLink.title,
-        url: newLink.url,
-        category: newLink.category,
-      };
-
-      setService((prev) => ({
-        ...prev,
-        links: [...(prev.links || []), link],
-      }));
-
-      setNewLink({
-        title: "",
-        url: "",
-        category: "external",
-      });
-    } catch (error) {
-      console.error("Error adding link:", error);
-    }
-  };
-
-  const handleRemoveLink = (linkId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setService((prev) => ({
-      ...prev,
-      links: (prev.links || []).filter((l) => l.id !== linkId),
-    }));
-  };
-
-  const renderLinkCard = (link: ServiceLink) => (
-    <View key={link.id} style={[styles.linkCard, { backgroundColor: theme.backgroundSecondary }]}>
-      <View style={styles.linkContent}>
-        <View style={styles.linkHeader}>
-          <ThemedText type="h4" numberOfLines={1} style={{ flex: 1 }}>
-            {link.title}
-          </ThemedText>
-          <Pressable
-            onPress={() => handleRemoveLink(link.id)}
-            style={styles.removeButton}
-          >
-            <Feather name="trash-2" size={18} color={theme.text} />
-          </Pressable>
-        </View>
-        <ThemedText
-          type="small"
-          numberOfLines={2}
-          style={[styles.linkUrl, { color: theme.link }]}
-        >
-          {link.url}
-        </ThemedText>
-        <View style={styles.categoryBadge}>
-          <ThemedText
-            type="small"
-            style={[
-              styles.categoryText,
-              { color: theme.backgroundRoot },
-            ]}
-          >
-            {link.category}
-          </ThemedText>
-        </View>
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.backgroundRoot, justifyContent: "center", alignItems: "center" }]}>
+        <ActivityIndicator size="large" color={theme.text} />
       </View>
-    </View>
-  );
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -206,7 +149,7 @@ export default function ServiceEditorScreen() {
                 activeTab === "details" && styles.activeTabText,
               ]}
             >
-              Service Details
+              Details
             </ThemedText>
           </Pressable>
 
@@ -230,7 +173,7 @@ export default function ServiceEditorScreen() {
                 activeTab === "links" && styles.activeTabText,
               ]}
             >
-              Links ({service.links?.length || 0})
+              Links
             </ThemedText>
           </Pressable>
         </View>
@@ -250,6 +193,7 @@ export default function ServiceEditorScreen() {
                 }
                 placeholder="Enter service name"
                 placeholderTextColor={theme.textSecondary}
+                editable={!saving}
                 style={[
                   styles.input,
                   {
@@ -277,6 +221,7 @@ export default function ServiceEditorScreen() {
                 placeholder="30"
                 placeholderTextColor={theme.textSecondary}
                 keyboardType="number-pad"
+                editable={!saving}
                 style={[
                   styles.input,
                   {
@@ -294,16 +239,17 @@ export default function ServiceEditorScreen() {
                 Price ($)
               </ThemedText>
               <TextInput
-                value={String(service.price)}
+                value={String((service.price || 0) / 100)}
                 onChangeText={(text) =>
                   setService((prev) => ({
                     ...prev,
-                    price: parseFloat(text) || 0,
+                    price: Math.round((parseFloat(text) || 0) * 100),
                   }))
                 }
                 placeholder="0.00"
                 placeholderTextColor={theme.textSecondary}
                 keyboardType="decimal-pad"
+                editable={!saving}
                 style={[
                   styles.input,
                   {
@@ -321,7 +267,7 @@ export default function ServiceEditorScreen() {
                 Description
               </ThemedText>
               <TextInput
-                value={service.description}
+                value={service.description || ""}
                 onChangeText={(text) =>
                   setService((prev) => ({ ...prev, description: text }))
                 }
@@ -329,6 +275,7 @@ export default function ServiceEditorScreen() {
                 placeholderTextColor={theme.textSecondary}
                 multiline
                 numberOfLines={4}
+                editable={!saving}
                 style={[
                   styles.input,
                   styles.descriptionInput,
@@ -346,127 +293,14 @@ export default function ServiceEditorScreen() {
         {/* Links Tab */}
         {activeTab === "links" && (
           <View style={styles.tabContent}>
-            {/* Existing Links */}
-            {service.links && service.links.length > 0 && (
-              <View style={styles.section}>
-                <ThemedText type="h4" style={styles.sectionTitle}>
-                  Service Links
-                </ThemedText>
-                <View style={styles.linksList}>
-                  {service.links.map((link) => renderLinkCard(link))}
-                </View>
-              </View>
-            )}
-
-            {/* Add New Link */}
             <View style={styles.section}>
               <ThemedText type="h4" style={styles.sectionTitle}>
-                Add New Link
+                Coming Soon
               </ThemedText>
-
-              <TextInput
-                value={newLink.title}
-                onChangeText={(text) =>
-                  setNewLink((prev) => ({ ...prev, title: text }))
-                }
-                placeholder="Link title (e.g., Gallery, Video)"
-                placeholderTextColor={theme.textSecondary}
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.backgroundSecondary,
-                    color: theme.text,
-                    borderColor: theme.backgroundTertiary,
-                  },
-                ]}
-              />
-
-              <TextInput
-                value={newLink.url}
-                onChangeText={(text) =>
-                  setNewLink((prev) => ({ ...prev, url: text }))
-                }
-                placeholder="URL (e.g., https://example.com)"
-                placeholderTextColor={theme.textSecondary}
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.backgroundSecondary,
-                    color: theme.text,
-                    borderColor: theme.backgroundTertiary,
-                  },
-                ]}
-              />
-
-              {/* Category Selector */}
-              <ThemedText type="small" style={styles.sectionTitle}>
-                Category
+              <ThemedText type="body" style={styles.comingSoonText}>
+                Link management will be available in the next update
               </ThemedText>
-              <View style={styles.categorySelector}>
-                {["gallery", "video", "external", "social"].map((cat) => (
-                  <Pressable
-                    key={cat}
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setNewLink((prev) => ({
-                        ...prev,
-                        category: cat as any,
-                      }));
-                    }}
-                    style={[
-                      styles.categoryButton,
-                      {
-                        backgroundColor:
-                          newLink.category === cat
-                            ? theme.link
-                            : theme.backgroundSecondary,
-                      },
-                    ]}
-                  >
-                    <ThemedText
-                      type="small"
-                      style={[
-                        styles.categoryButtonText,
-                        {
-                          color:
-                            newLink.category === cat
-                              ? theme.buttonText
-                              : theme.text,
-                        },
-                      ]}
-                    >
-                      {cat}
-                    </ThemedText>
-                  </Pressable>
-                ))}
-              </View>
-
-              <Pressable
-                onPress={handleAddLink}
-                style={[
-                  styles.addLinkButton,
-                  { backgroundColor: theme.link },
-                ]}
-              >
-                <Feather name="plus" size={20} color={theme.buttonText} />
-                <ThemedText
-                  type="body"
-                  style={[styles.addLinkButtonText, { color: theme.buttonText }]}
-                >
-                  Add Link
-                </ThemedText>
-              </Pressable>
             </View>
-
-            {/* Empty State */}
-            {(!service.links || service.links.length === 0) && (
-              <View style={styles.emptyState}>
-                <Feather name="link" size={40} color={theme.textSecondary} />
-                <ThemedText type="body" style={styles.emptyStateText}>
-                  No links yet. Add one to get started!
-                </ThemedText>
-              </View>
-            )}
           </View>
         )}
 
@@ -482,9 +316,11 @@ export default function ServiceEditorScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               navigation.goBack();
             }}
+            disabled={saving}
             style={[
               styles.cancelButton,
               { backgroundColor: theme.backgroundSecondary },
+              saving && { opacity: 0.5 },
             ]}
           >
             <ThemedText type="body" style={styles.cancelButtonText}>
@@ -494,9 +330,10 @@ export default function ServiceEditorScreen() {
 
           <Button
             onPress={handleSave}
+            disabled={saving}
             style={{ flex: 1, marginLeft: Spacing.md }}
           >
-            Save Service
+            {saving ? "Saving..." : "Save Service"}
           </Button>
         </View>
       </KeyboardAwareScrollViewCompat>
@@ -554,73 +391,9 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     minHeight: 100,
   },
-  categorySelector: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  categoryButton: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.full,
-  },
-  categoryButtonText: {
-    fontWeight: "500",
-  },
-  linksList: {
-    gap: Spacing.md,
-  },
-  linkCard: {
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
-    marginBottom: Spacing.md,
-  },
-  linkContent: {
-    gap: Spacing.sm,
-  },
-  linkHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  linkUrl: {
-    opacity: 0.7,
-  },
-  categoryBadge: {
-    alignSelf: "flex-start",
-    backgroundColor: "#7B68EE",
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.full,
-  },
-  categoryText: {
-    fontWeight: "500",
-    fontSize: 12,
-  },
-  removeButton: {
-    padding: Spacing.sm,
-  },
-  addLinkButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.md,
-    borderRadius: BorderRadius.lg,
-    gap: Spacing.sm,
-    marginBottom: Spacing.xl,
-  },
-  addLinkButtonText: {
-    fontWeight: "600",
-  },
-  emptyState: {
-    alignItems: "center",
-    paddingVertical: Spacing.xl * 2,
-    gap: Spacing.md,
-  },
-  emptyStateText: {
+  comingSoonText: {
     opacity: 0.6,
-    marginTop: Spacing.md,
+    fontStyle: "italic",
   },
   actionButtons: {
     flexDirection: "row",
