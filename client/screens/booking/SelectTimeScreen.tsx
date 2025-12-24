@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { View, StyleSheet, ScrollView, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -40,9 +41,15 @@ export default function SelectTimeScreen() {
 
   const handleContinue = () => {
     if (selectedTime) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const timeSlotId = `${Date.now()}`;
       navigation.navigate("Checkout", { serviceId, timeSlotId });
     }
+  };
+  
+  const handleSelectTime = (time: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSelectedTime(time);
   };
 
   return (
@@ -64,13 +71,14 @@ export default function SelectTimeScreen() {
               key={time}
               time={time}
               selected={selectedTime === time}
-              onPress={() => setSelectedTime(time)}
+              onPress={() => handleSelectTime(time)}
             />
           ))}
         </View>
 
         {selectedTime && (
-          <View
+          <Pressable
+            onPress={handleContinue}
             style={[
               styles.continueButton,
               { backgroundColor: theme.accent },
@@ -79,11 +87,10 @@ export default function SelectTimeScreen() {
             <ThemedText
               type="body"
               style={[styles.buttonText, { color: theme.buttonText }]}
-              onPress={handleContinue}
             >
               Continue
             </ThemedText>
-          </View>
+          </Pressable>
         )}
       </ScrollView>
     </ThemedView>

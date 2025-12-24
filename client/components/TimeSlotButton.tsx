@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -34,6 +35,7 @@ export function TimeSlotButton({
   const handlePressIn = () => {
     if (!disabled) {
       scale.value = withSpring(0.95, AnimationConfig.spring);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
   };
 

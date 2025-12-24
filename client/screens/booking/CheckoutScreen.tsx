@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Pressable } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -32,6 +33,7 @@ export default function CheckoutScreen() {
       return;
     }
 
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const bookingId = `${Date.now()}`;
     navigation.navigate("Confirmation", { bookingId });
   };
@@ -74,17 +76,17 @@ export default function CheckoutScreen() {
           </ThemedText>
         </View>
 
-        <View
+        <Pressable
+          onPress={handleBooking}
           style={[styles.bookButton, { backgroundColor: theme.accent }]}
         >
           <ThemedText
             type="body"
             style={[styles.buttonText, { color: theme.buttonText }]}
-            onPress={handleBooking}
           >
             Complete Booking
           </ThemedText>
-        </View>
+        </Pressable>
       </KeyboardAwareScrollViewCompat>
     </ThemedView>
   );

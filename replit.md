@@ -133,10 +133,25 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - QR codes redirect to booking page via generated QR code endpoint
 
 ## Recent Updates (Dec 24, 2025)
-- Added comprehensive haptic feedback throughout the app:
-  - Light haptics: Buttons, service cards, settings rows, month navigation
-  - Medium haptics: Calendar day selection, customer details, QR code generation, data operations
-  - Heavy haptics: Floating action button (primary actions)
+- **Comprehensive Haptic Feedback Enhancement:**
+  - **Light Haptics (ImpactFeedbackStyle.Light):**
+    - All standard buttons (Button component)
+    - Service cards tap
+    - Customer cards tap
+    - Calendar day selection
+    - Settings rows/options
+    - Month navigation (prev/next)
+    - Time slot selection in booking flow
+  - **Medium Haptics (ImpactFeedbackStyle.Medium):**
+    - Calendar day selection
+    - Customer card details
+    - QR code generation
+    - Data operations (clear, reset)
+    - Continue/Next buttons in booking flow
+    - Complete booking confirmation button
+    - Done button in confirmation screen
+  - **Heavy Haptics (ImpactFeedbackStyle.Heavy):**
+    - Floating action button (primary actions)
 - Fixed booking page 404 error - now serving correctly at /book/:slug
 - Created `getBookingDomain()` helper function to centralize production domain handling
 - Updated all booking link references to use new helper
