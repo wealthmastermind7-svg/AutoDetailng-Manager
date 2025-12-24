@@ -49,10 +49,24 @@ export default function ServiceEditorScreen() {
   const serviceId = (route.params as any)?.serviceId;
 
   useEffect(() => {
+    initializeBusiness();
+  }, []);
+
+  useEffect(() => {
     if (serviceId) {
       loadService();
     }
   }, [serviceId]);
+
+  const initializeBusiness = async () => {
+    try {
+      if (!api.getBusinessId()) {
+        await api.getOrCreateBusiness();
+      }
+    } catch (error) {
+      console.error("Error initializing business:", error);
+    }
+  };
 
   const loadService = async () => {
     setLoading(true);
