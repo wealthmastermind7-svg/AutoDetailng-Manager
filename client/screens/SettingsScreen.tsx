@@ -187,7 +187,7 @@ export default function SettingsScreen() {
         {
           icon: "link" as const,
           title: "Share Booking Link",
-          subtitle: business ? `${(process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app").replace(/^https?:\/\//, '')}/book/${business.slug}` : "Generate your booking link",
+          subtitle: business ? `${getBookingDomain()}/book/${business.slug}` : "Generate your booking link",
           onPress: handleShareBookingLink,
           showChevron: true,
         },

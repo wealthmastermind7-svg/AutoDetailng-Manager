@@ -73,8 +73,9 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 
 ## Deployment Configuration
 - **Environment Variables:**
-  - `EXPO_PUBLIC_DOMAIN`: Set to `elegant-canvas--wealthmastermin.replit.app` for production
+  - `EXPO_PUBLIC_DOMAIN`: Set to `bookflowx.cerolauto.store` for production
   - Auto-detects Replit dev domains and routes to localhost:5000 for development
+  - `getBookingDomain()` helper function ensures all booking links use the correct domain
   
 - **Exposed Ports:**
   - 5000: Express backend (API and public booking page)
@@ -121,7 +122,12 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
   - Medium haptics: Calendar day selection, customer details, QR code generation, data operations
   - Heavy haptics: Floating action button (primary actions)
 - Fixed booking page 404 error - now serving correctly at /book/:slug
-- Verified production domain bookflowx.cerolauto.store is properly configured in all booking links and QR codes
+- Created `getBookingDomain()` helper function to centralize production domain handling
+- Updated all booking link references to use new helper:
+  - Share booking link feature in Settings screen
+  - QR code sharing functionality
+  - Demo link display showing correct production domain
+- Verified production domain bookflowx.cerolauto.store is properly configured across all features
 
 ## Next Phase Features
 - ServiceEditor form implementation with API save
