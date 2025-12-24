@@ -9,6 +9,7 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius } from "@/constants/theme";
 import { api, Business } from "@/lib/api";
+import { getBookingDomain } from "@/lib/query-client";
 import { SettingsRow } from "@/components/SettingsRow";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
@@ -110,8 +111,7 @@ export default function SettingsScreen() {
 
   const handleShareBookingLink = async () => {
     if (!business) return;
-    const domain = process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app";
-    const cleanDomain = domain.replace(/^https?:\/\//, '');
+    const cleanDomain = getBookingDomain();
     const bookingLink = `https://${cleanDomain}/book/${business.slug}`;
     try {
       await Share.share({
@@ -144,7 +144,7 @@ export default function SettingsScreen() {
   const handleDownloadQRCode = async () => {
     if (!business) return;
     try {
-      const cleanDomain = (process.env.EXPO_PUBLIC_DOMAIN || "bookflow.app").replace(/^https?:\/\//, '');
+      const cleanDomain = getBookingDomain();
       const qrImageUrl = `/api/businesses/${business.id}/qrcode?format=image`;
       const fullUrl = `https://${cleanDomain}${qrImageUrl}`;
       await Share.share({

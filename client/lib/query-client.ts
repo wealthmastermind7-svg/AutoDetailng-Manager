@@ -29,6 +29,23 @@ export function getApiUrl(): string {
   return url.href;
 }
 
+/**
+ * Gets the public booking domain (clean domain without protocol)
+ * Used for generating public booking URLs and QR codes
+ * @returns {string} The clean domain (e.g., "bookflowx.cerolauto.store")
+ */
+export function getBookingDomain(): string {
+  let domain = process.env.EXPO_PUBLIC_DOMAIN || "localhost:5000";
+
+  // For Replit dev domains, use localhost for local development
+  if (domain.includes("picard.replit.dev") || domain.includes("$REPLIT_DEV_DOMAIN") || domain.includes("replit.app")) {
+    domain = "localhost:5000";
+  }
+
+  // Strip any protocol if present
+  return domain.replace(/^https?:\/\//, "");
+}
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
