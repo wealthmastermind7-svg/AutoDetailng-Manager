@@ -381,6 +381,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Set/update availability for a specific day
+  app.put("/api/businesses/:businessId/availability/:dayOfWeek", async (req: Request, res: Response) => {
+    try {
+      const { startTime, endTime, isActive } = req.body;
+      const dayOfWeek = parseInt(req.params.dayOfWeek);
+      
+      if (isNaN(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+        return res.status(400).json({ error: "Invalid day of week (must be 0-6)" });
+      }
+      
+      const availability = await storage.updateOrCreateAvailability({
+        businessId: req.params.businessId,
+        dayOfWeek,
+        startTime: startTime || "09:00",
+        endTime: endTime || "17:00",
+        isActive: isActive !== undefined ? isActive : true,
+      });
+      
+      res.json(availability);
+    } catch (error) {
+      console.error("Error updating availability:", error);
+      res.status(500).json({ error: "Failed to update availability" });
+    }
+  });
+
+  // Bulk update availability (set all days at once)
+  app.put("/api/businesses/:businessId/availability", async (req: Request, res: Response) => {
+    try {
+      const { schedules } = req.body;
+      
+      if (!Array.isArray(schedules)) {
+        return res.status(400).json({ error: "Schedules must be an array" });
+      }
+      
+      const results = [];
+      for (const schedule of schedules) {
+        const availability = await storage.updateOrCreateAvailability({
+          businessId: req.params.businessId,
+          dayOfWeek: schedule.dayOfWeek,
+          startTime: schedule.startTime || "09:00",
+          endTime: schedule.endTime || "17:00",
+          isActive: schedule.isActive !== undefined ? schedule.isActive : true,
+        });
+        results.push(availability);
+      }
+      
+      res.json(results);
+    } catch (error) {
+      console.error("Error updating availability:", error);
+      res.status(500).json({ error: "Failed to update availability" });
+    }
+  });
+
   // Get available time slots for a specific date
   app.get("/api/businesses/:businessId/slots/:date", async (req: Request, res: Response) => {
     try {

@@ -101,6 +101,22 @@ export interface TimeSlot {
   available: boolean;
 }
 
+export interface Availability {
+  id: string;
+  businessId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
+export interface AvailabilitySchedule {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}
+
 class ApiClient {
   private businessId: string | null = null;
 
@@ -332,6 +348,24 @@ class ApiClient {
     } catch {
       return null;
     }
+  }
+
+  async getAvailability(): Promise<Availability[]> {
+    try {
+      const res = await fetch(`${getApiBase()}${this.getBusinessPath()}/availability`);
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  async updateAvailability(dayOfWeek: number, schedule: Partial<AvailabilitySchedule>): Promise<Availability> {
+    return makeRequest<Availability>("PUT", `${this.getBusinessPath()}/availability/${dayOfWeek}`, schedule);
+  }
+
+  async bulkUpdateAvailability(schedules: AvailabilitySchedule[]): Promise<Availability[]> {
+    return makeRequest<Availability[]>("PUT", `${this.getBusinessPath()}/availability`, { schedules });
   }
 }
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { View, FlatList, StyleSheet, Pressable } from "react-native";
 import * as Haptics from "expo-haptics";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@/hooks/useTheme";
@@ -12,10 +13,14 @@ import { BookingCard } from "@/components/BookingCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Feather } from "@expo/vector-icons";
+import { CalendarStackParamList } from "@/navigation/CalendarStackNavigator";
+
+type CalendarScreenNavigationProp = NativeStackNavigationProp<CalendarStackParamList, "CalendarMain">;
 
 export default function CalendarScreen() {
   const headerHeight = useHeaderHeight();
   const tabBarHeight = useBottomTabBarHeight();
+  const navigation = useNavigation<CalendarScreenNavigationProp>();
   const { theme } = useTheme();
 
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -101,6 +106,11 @@ export default function CalendarScreen() {
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   };
 
+  const handleOpenAvailability = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    navigation.navigate("AvailabilityEditor");
+  };
+
   const monthName = currentMonth.toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
@@ -143,9 +153,20 @@ export default function CalendarScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={[styles.header, { paddingTop: headerHeight + Spacing.lg }]}>
-        <ThemedText type="h3" style={styles.monthTitle}>
-          {monthName}
-        </ThemedText>
+        <View style={styles.headerRow}>
+          <ThemedText type="h3" style={styles.monthTitle}>
+            {monthName}
+          </ThemedText>
+          <Pressable
+            onPress={handleOpenAvailability}
+            style={[styles.hoursButton, { backgroundColor: theme.backgroundSecondary }]}
+          >
+            <Feather name="clock" size={16} color={theme.text} />
+            <ThemedText type="small" style={styles.hoursButtonText}>
+              Hours
+            </ThemedText>
+          </Pressable>
+        </View>
         <View style={styles.weekDays}>
           {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
             <ThemedText key={day} type="small" style={styles.weekDay}>
@@ -219,8 +240,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.lg,
   },
-  monthTitle: {
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.lg,
+  },
+  monthTitle: {},
+  hoursButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xs,
+    gap: Spacing.xs,
+  },
+  hoursButtonText: {
+    fontWeight: "500",
   },
   weekDays: {
     flexDirection: "row",

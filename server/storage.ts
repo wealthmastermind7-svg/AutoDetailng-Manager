@@ -60,6 +60,7 @@ export interface IStorage {
   // Availability
   getAvailability(businessId: string): Promise<Availability[]>;
   setAvailability(availability: InsertAvailability): Promise<Availability>;
+  updateOrCreateAvailability(availability: InsertAvailability): Promise<Availability>;
   
   // Demo Data
   initializeDemoData(businessId: string): Promise<void>;
@@ -270,6 +271,35 @@ export class DatabaseStorage implements IStorage {
   async setAvailability(avail: InsertAvailability): Promise<Availability> {
     const [created] = await db.insert(availability).values(avail).returning();
     return created;
+  }
+
+  async updateOrCreateAvailability(avail: InsertAvailability): Promise<Availability> {
+    // Check if availability for this day already exists
+    const existing = await db
+      .select()
+      .from(availability)
+      .where(and(
+        eq(availability.businessId, avail.businessId),
+        eq(availability.dayOfWeek, avail.dayOfWeek)
+      ));
+    
+    if (existing.length > 0) {
+      // Update existing
+      const [updated] = await db
+        .update(availability)
+        .set({
+          startTime: avail.startTime,
+          endTime: avail.endTime,
+          isActive: avail.isActive,
+        })
+        .where(eq(availability.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      // Create new
+      const [created] = await db.insert(availability).values(avail).returning();
+      return created;
+    }
   }
 
   // Push Tokens
