@@ -361,7 +361,7 @@ export default function SettingsScreen() {
         {
           icon: "link" as const,
           title: "Share Booking Link",
-          subtitle: business?.bookingUrl || `${getBookingDomain()}/book/${business?.slug}`,
+          subtitle: business?.bookingUrl || (business?.slug ? `${getBookingDomain()}/book/${business.slug}` : "Loading..."),
           onPress: handleShareBookingLink,
           showChevron: true,
         },

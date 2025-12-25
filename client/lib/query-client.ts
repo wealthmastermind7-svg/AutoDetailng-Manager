@@ -84,11 +84,11 @@ export function getBookingDomain(): string {
     }
   }
 
-  // For Expo Go (native) - use environment variable
+  // For native Expo (TestFlight/Expo Go) - use environment variable directly
   let domain = process.env.EXPO_PUBLIC_DOMAIN || "localhost:5000";
 
-  // For Replit dev domains, use localhost for local development
-  if (domain.includes("picard.replit.dev") || domain.includes("$REPLIT_DEV_DOMAIN") || domain.includes("replit.app")) {
+  // Only override for literal template strings or missing values
+  if (domain.includes("$REPLIT_DEV_DOMAIN") || domain === "") {
     domain = "localhost:5000";
   }
 
