@@ -42,6 +42,7 @@ export default function SettingsScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingField, setEditingField] = useState<"name" | "website" | "phone" | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
   const [demoTypeModalVisible, setDemoTypeModalVisible] = useState(false);
   const [selectedDemoType, setSelectedDemoType] = useState<string>("salon");
 
@@ -311,17 +312,23 @@ export default function SettingsScreen() {
 
   const handleSaveBusinessField = async () => {
     if (!business || !editingField) return;
+    setEditLoading(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const updates: Partial<Business> = { [editingField]: editValue };
+      console.log("Saving field:", editingField, "with value:", editValue);
       const updated = await api.updateBusiness(updates);
+      console.log("Save successful:", updated);
       setBusiness(updated);
       setEditModalVisible(false);
       setEditingField(null);
+      setEditValue("");
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
       console.error("Error updating business:", error);
-      Alert.alert("Error", "Failed to update business information");
+      Alert.alert("Error", `Failed to save ${editingField}. Please try again.`);
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -487,7 +494,9 @@ export default function SettingsScreen() {
               placeholderTextColor={theme.textSecondary}
             />
             <View style={styles.modalActions}>
-              <Button onPress={handleSaveBusinessField}>Save</Button>
+              <Button onPress={handleSaveBusinessField} disabled={editLoading || !editValue.trim()}>
+                {editLoading ? "Saving..." : "Save"}
+              </Button>
             </View>
           </View>
         </View>
