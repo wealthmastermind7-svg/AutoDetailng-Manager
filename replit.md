@@ -1,247 +1,57 @@
 # BookFlow - Multi-Tenancy Booking Platform MVP
 
-## Project Overview
-A scalable multi-tenant booking platform built with React Native (Expo), Express.js, and PostgreSQL. ONE app serves ALL businesses through unique booking URLs (/book/:businessSlug). Features premium design with sophisticated black/white color scheme, oversized typography, cinematic animations, and circular progress meters.
+## Overview
+BookFlow is a scalable multi-tenant booking platform designed to serve various businesses through a single application. It provides both a public booking flow for customers and a comprehensive admin dashboard for business owners. The platform focuses on a premium user experience with a sophisticated design, oversized typography, and cinematic animations. It aims to provide a robust, app-store-ready solution for appointment and service management across multiple business verticals.
 
-## Design System
-- **Color Palette**: Premium black & white (Pure Black, Charcoal, Graphite, Smoke, Silver, Pearl)
-- **Typography**: Oversized hierarchy (Display 72-96px, H1 48-56px, Body 18-24px)
-- **Animation**: Spring physics with cinematic transitions (400ms ease-out for screens)
-- **Components**: Circular meters, animated cards, line graphs with bezier curves
+## User Preferences
+- **Communication Style**: I prefer clear, concise, and direct communication.
+- **Explanation Style**: Provide detailed explanations for complex concepts or decisions.
+- **Workflow**: I prefer an iterative development approach.
+- **Interaction**: Ask before making major architectural changes or introducing new dependencies.
+- **Codebase Changes**:
+    - Do not change the fundamental premium black & white color scheme.
+    - Prioritize robust error handling and graceful fallbacks.
+    - Ensure new features integrate seamlessly with existing haptic feedback patterns.
+    - When updating dependencies, prioritize stability and production readiness.
 
-## Architecture
-### Frontend (React Native - Expo)
-- 5-tab admin dashboard (Home, Calendar, Services, Customers, Settings)
-- Public booking flow (Service → Time → Checkout → Confirmation)
-- Reusable components: CircularMeter, AnimatedMetricCard, LineGraph, BookingCard, ServiceCard, CustomerCard
-- API client (`client/lib/api.ts`) for all backend communication
-- Resilient `getApiUrl()` in `client/lib/query-client.ts` that auto-detects Replit dev domains
+## System Architecture
+BookFlow is built with a decoupled frontend and backend architecture.
 
-### Backend (Express.js + PostgreSQL)
-- Running on port 5000
-- Multi-tenant REST API with businessId filtering
-- Drizzle ORM for database operations
-- Public booking page served at `/book/:businessSlug`
-- Smart business creation: checks for existing business by slug before creating
+### UI/UX Decisions
+- **Color Palette**: Premium black & white (`Pure Black`, `Charcoal`, `Graphite`, `Smoke`, `Silver`, `Pearl`).
+- **Typography**: Oversized hierarchy (`Display 72-96px`, `H1 48-56px`, `Body 18-24px`).
+- **Animation**: Spring physics with cinematic transitions (400ms ease-out for screen transitions).
+- **Components**: Utilizes custom components like Circular Meters, Animated Cards, and Line Graphs with Bezier curves.
+- **Haptic Feedback**: Comprehensive haptic feedback (Light, Medium, Heavy) implemented across all interactive elements for enhanced user experience.
 
-### Database Schema (PostgreSQL with Drizzle)
-- businesses: id, name, slug, email, phone, website, notificationsEnabled
-- services: id, businessId, name, duration, price (cents), description
-- customers: id, businessId, name, email, phone
-- bookings: id, businessId, customerId, serviceId, date, time, status, totalPrice (cents)
-- availability: id, businessId, dayOfWeek, startTime, endTime, isAvailable
-- pushTokens: id, businessId, token, platform, deviceName, isActive (for Expo Push Notifications)
+### Technical Implementations
+- **Frontend**: React Native (Expo) for cross-platform mobile and web interfaces. It features a 5-tab admin dashboard and a public booking flow. API communication is handled via `client/lib/api.ts` with a resilient `getApiUrl()` for Replit development and production environments.
+- **Backend**: Express.js server running on port 5000, providing a multi-tenant REST API. It uses Drizzle ORM for PostgreSQL database interactions. Public booking pages are served at `/book/:businessSlug`.
+- **Database**: PostgreSQL with a multi-tenant schema that includes tables for `businesses`, `services`, `customers`, `bookings`, `availability`, and `pushTokens`.
+- **Navigation**: Structured with `MainTabNavigator` for admin functions and `BookingFlowNavigator` for the public booking process, alongside modal screens for editors.
+- **Push Notifications**: Integrated with Expo Push Notifications for informing business owners of new bookings, including permission handling and token management.
 
-### Navigation Structure
-- MainTabNavigator: 5 tabs for admin
-- BookingFlowNavigator: 4-screen booking flow
-- Modal screens: Service editor with cancel/save
+### Feature Specifications
+- **Dashboard**: Displays revenue metrics and booking graphs.
+- **Calendar**: Day selection with booking previews.
+- **Service Management**: CRUD operations for services.
+- **Customer Management**: Lists customers with booking counts.
+- **Settings**: Data management, booking link sharing, and notification settings.
+- **Public Booking Flow**: A 4-screen process (Service → Time → Checkout → Confirmation) accessible via unique business slugs.
+- **Demo Data**: Multi-business-type demo data feature with 5 pre-configured business verticals (Salon, Auto Detailing, Solar Installation, Coaching, Fitness) for showcase purposes.
+- **QR Code Generation**: For sharing booking links.
 
-## MVP Features Completed
-✓ Dashboard with revenue metrics and booking graphs
-✓ Calendar with day selection and booking preview
-✓ Services management (CRUD ready)
-✓ Customers list with booking counts
-✓ Settings screen with data management and booking link sharing
-✓ QR code generation and sharing for booking links
-✓ Public booking flow (all 4 screens) at /book/:businessSlug
-✓ PostgreSQL database with multi-tenant schema
-✓ Full API integration (all screens use backend API)
-✓ Demo data initialization
-✓ Premium UI components with animations
-✓ Resilient app initialization with retry logic (3 attempts)
-✓ Smart duplicate business handling (server checks before creating)
-✓ Comprehensive haptic feedback on all interactive elements (Light/Medium/Heavy)
+### System Design Choices
+- **Multi-Tenancy**: Implemented at the API and database levels, ensuring data isolation per business.
+- **API Connectivity**: Robust `getApiUrl()` function handles dynamic environment detection for seamless operation across development (Replit, localhost), Expo Go, and production builds.
+- **Error Handling**: Implemented client-side retry logic for initialization and server-side checks for duplicate business creation.
+- **Production Readiness**: Addressed iOS-specific issues like animation bugs with `AnimatedPressable`, ensuring save operations persist correctly by awaiting asynchronous calls before UI dismissal, and adding necessary iOS permission declarations in `app.json`.
 
-## API Endpoints
-- GET/POST /api/business - Business management
-- GET/POST /api/services - Service CRUD (businessId filtered)
-- GET/POST /api/bookings - Booking CRUD (businessId filtered)
-- GET /api/customers - Customer list (businessId filtered)
-- GET /api/stats - Dashboard statistics
-- POST /api/demo-data - Initialize demo data
-- DELETE /api/data - Clear all business data
-- GET /api/businesses/:businessId/qrcode - Generate QR code for booking link
-- POST /api/push-tokens - Register push notification token
-- DELETE /api/push-tokens - Unregister push token
-- GET /api/businesses/:businessId/push-tokens - List registered devices
-- POST /api/businesses/:businessId/test-notification - Send test notification
-
-## Key Files
-- `shared/schema.ts` - Database schema definitions
-- `server/storage.ts` - Database operations
-- `server/routes.ts` - API route handlers
-- `server/notifications.ts` - Push notification service (Expo Push)
-- `server/templates/booking.html` - Public booking page
-- `client/lib/api.ts` - Frontend API client with retry logic
-- `client/lib/query-client.ts` - Query client with smart URL detection
-- `client/lib/notifications.ts` - Client-side notification handling
-- `client/screens/*.tsx` - Admin dashboard screens
-
-## Deployment Configuration
-- **Environment Variables:**
-  - `EXPO_PUBLIC_DOMAIN`: Set to `bookflowx.cerolauto.store` for production
-  - Auto-detects Replit dev domains and routes to localhost:5000 for development
-  - `getBookingDomain()` helper function ensures all booking links use the correct domain
-  
-- **Exposed Ports:**
-  - 5000: Express backend (API and public booking page)
-  - 8081: Expo dev server (web version)
-
-## Known Issues & Resolutions
-1. **App Initialization Stuck on Loading** - RESOLVED
-   - Issue: App was failing when trying to create duplicate demo-business
-   - Fix 1: Client now retries initialization 3 times with exponential backoff
-   - Fix 2: Server checks for existing business before creating, returns existing instead of error
-   - Fix 3: getApiUrl() now detects Replit dev domains and routes to localhost:5000
-
-2. **Missing EXPO_PUBLIC_DOMAIN** - RESOLVED
-   - Fixed getApiUrl() to fallback gracefully to localhost:5000 if not set
-   - Properly handles both http and https protocols
-
-3. **Demo Data Initialization Failures in Production** - RESOLVED
-   - Issue: Demo data endpoint was returning error on production domain
-   - Root Cause: Demo customer emails were hardcoded (not unique), causing database constraint violations on repeated calls
-   - Fix: Demo customers now use unique email addresses with timestamps (e.g., john-{timestamp}@example.com)
-   - Status: Fixed and tested locally, production domain needs re-deployment to apply changes
-
-4. **Booking Page 404 Error** - RESOLVED (Dec 24, 2025)
-   - Issue: Booking page at /book/:slug returning 404 "Cannot find templates/booking.html"
-   - Root Cause: Path resolution issue when server was compiled to server_dist directory
-   - Fix: Added path resolution error handling and logging in booking page routes
-   - Status: Fixed - booking page now serves correctly at bookflowx.cerolauto.store/book/:slug
-   - QR codes now correctly generate with production domain
-
-5. **API Connectivity Issues (Web & Expo Go)** - RESOLVED (Dec 24, 2025)
-   - Issue: Web preview worked but Expo Go native app couldn't reach API
-   - Root Cause: Browser uses window.location for dynamic URL detection, but native Expo Go needed environment variable handling
-   - Fix: Enhanced getApiUrl() to:
-     - Check window.location in browser (works for web preview and production)
-     - Handle literal $REPLIT_DEV_DOMAIN in EXPO_PUBLIC_DOMAIN by falling back to REACT_NATIVE_PACKAGER_HOSTNAME
-     - Fallback to localhost:5000 for local development
-   - Status: FIXED - Both web preview and Expo Go now connect to API successfully
-
-6. **Button/Touch Interactions Not Working in TestFlight/Production** - RESOLVED (Dec 25, 2025)
-   - Issue: All buttons and touchable elements (buttons, cards, calendar days) did not respond to touches in TestFlight builds
-   - Root Cause: `Animated.createAnimatedComponent(Pressable)` (AnimatedPressable) has known bugs in production iOS builds with React Native Reanimated
-   - Fix: Replaced AnimatedPressable pattern with Animated.View wrapping regular Pressable in all 9 affected components:
-     - Button, ServiceCard, Card, FloatingActionButton, CustomerCard, BookingCard, CalendarDay, TimeSlotButton, AnimatedMetricCard
-   - Technical Detail: Animation transforms now applied to outer Animated.View while touch handling stays on inner Pressable
-   - Status: FIXED - All touch interactions now work correctly in production builds
-
-## Testing & Deployment
-- Local dev: Run `npm run server:dev && npm run expo:dev`, access web version at http://localhost:8081
-- TestFlight: App needs static build with `EXPO_PUBLIC_DOMAIN=elegant-canvas--wealthmastermin.replit.app`
-- Booking flow: Navigate to `/book/demo-business` to test public booking
-
-## Notes
-- Prices stored in cents (integer) in database, divided by 100 for display
-- Demo business auto-created as "demo-business" slug if none exists
-- Public booking URL format: http://localhost:5000/book/{businessSlug}
-- QR codes redirect to booking page via generated QR code endpoint
-
-## Critical TestFlight Fix (Dec 25, 2025)
-**iOS Permission Declarations Added to app.json:**
-- **Root Cause**: TestFlight enforces Apple sandbox rules strictly, while Expo Go has permissive container
-- **Problem**: Missing iOS permission strings in infoPlist caused silent permission denials in TestFlight
-- **Solution**: Added required NSUserNotificationUsageDescription, NSCameraUsageDescription, NSPhotoLibraryUsageDescription, NSPhotoLibraryAddUsageDescription
-- **Impact**: Notifications, QR code sharing, and image operations now work in TestFlight
-- **Next Action**: Rebuild and deploy new TestFlight binary - permissions only apply on fresh build
-
-## Recent Updates (Dec 24, 2025)
-- **Multi-Business-Type Demo Data Feature:**
-  - Added modal selector in Settings → Data Management → Load Demo Data
-  - 5 pre-configured business types with realistic data:
-    1. **Salon** - Hair & beauty services (haircut, coloring, beard trim, styling)
-    2. **Auto Detailing** - Car detailing services (wash & wax, interior detail, ceramic coating)
-    3. **Solar Installation** - Solar energy services (panel inspection, maintenance, battery setup)
-    4. **Coaching** - Personal & executive coaching (training, group classes, membership, intensive programs)
-    5. **Fitness** - Gym & fitness services (personal training, group classes, membership, nutrition)
-  - Each business type has industry-appropriate services with realistic pricing
-  - Pre-populated customers and sample bookings for each type
-  - Demo data is fully persistent in database (not mock data)
-  - Perfect for showcasing the app to different business verticals
-  - API endpoint: POST `/api/businesses/:businessId/demo-data` accepts `businessType` parameter
-
-- **Comprehensive Haptic Feedback Throughout Entire App:**
-  - **Light Haptics (ImpactFeedbackStyle.Light):**
-    - All standard buttons (Button component)
-    - Service cards tap
-    - Customer cards tap
-    - BookingCard tap
-    - Calendar day selection
-    - Settings rows/options
-    - Month navigation (prev/next)
-    - Time slot selection in booking flow
-  - **Medium Haptics (ImpactFeedbackStyle.Medium):**
-    - Calendar day selection
-    - Customer card details
-    - QR code generation
-    - Data operations (clear, reset)
-    - Continue/Next buttons in booking flow (SelectTimeScreen)
-    - Complete booking confirmation button (CheckoutScreen)
-    - Done button in confirmation screen (ConfirmationScreen)
-  - **Heavy Haptics (ImpactFeedbackStyle.Heavy):**
-    - Floating action button (primary actions)
-
-- **APP STORE READY (Dec 24, 2025):**
-  - ✅ Multi-business-type demo data with 5 industry verticals
-  - ✅ Comprehensive haptic feedback across entire app
-  - ✅ Booking page HTML loaded into memory for production reliability
-  - ✅ Business initialization error logging improved
-  - ✅ All core services verified working (Web app, API, Booking page)
-  - ✅ ErrorBoundary wrapping entire app
-  - ✅ App configuration (app.json) complete with bundle IDs, icons, splash screen
-  - ✅ Version set to 1.0.0
-  - ✅ All 5 dashboard screens functional
-  - ✅ Public booking flow fully operational with haptic feedback
-  - ✅ Database schema and API integration complete
-  - ✅ Service editor functional in both web and Expo Go
-  - ✅ API connectivity working across all platforms
-  - ✅ Push notifications fully implemented with permission flow
-  - ✅ QR code generation and sharing for booking links
-
-## Service Editor Features (Completed Dec 24, 2025)
-✅ **Fully Functional Service Editor** with:
-- Service Details tab: name, duration, price, description inputs
-- Links management tab: Add/remove/organize service links
-- Link categories: gallery, video, external, social
-- Tab-based navigation with link count badge
-- Haptic feedback on all interactions
-- Form validation (name, duration required)
-- Save and Cancel actions
-- Link cards with remove functionality
-
-## Push Notifications System (Completed Dec 24, 2025)
-✅ **Production-Ready Push Notifications** with:
-- Expo Push Notifications service integration
-- Permission request flow with proper iOS/Android handling
-- Device token registration and management
-- Automatic notification on new booking creation
-- Test notification feature in Settings
-- Token cleanup for unregistered devices
-- Platform detection (iOS/Android/Web)
-- Settings navigation when permission denied
-- Database persistence of push tokens
-- Graceful web fallback (shows message to use Expo Go)
-
-### Key Components:
-- `client/lib/notifications.ts` - Permission handling, token management
-- `server/notifications.ts` - Expo Push API integration
-- `shared/schema.ts` - pushTokens table schema
-- `app.json` - expo-notifications plugin configuration
-
-### How It Works:
-1. User toggles "Enable Notifications" in Settings
-2. App requests notification permission from device
-3. If granted, registers Expo Push Token with backend
-4. When new booking created, business owner receives push notification
-5. "Send Test Notification" verifies the system works
-
-## Next Phase Features
-- User authentication/login
-- Payment processing (Stripe)
-- SMS notifications (in addition to push)
-- Multi-location support
-- Advanced analytics
-- ServiceEditor API integration (server-side link persistence)
+## External Dependencies
+- **React Native (Expo)**: Frontend framework.
+- **Express.js**: Backend web framework.
+- **PostgreSQL**: Primary database.
+- **Drizzle ORM**: Database ORM for Node.js.
+- **Expo Push Notifications Service**: For sending push notifications.
+- **Stripe**: (Planned for next phase) Payment processing.
+- **Twilio (or similar)**: (Planned for next phase) SMS notifications.

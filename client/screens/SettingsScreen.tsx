@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable, ActivityIndicator, TextInput, Linking } from "react-native";
+import { View, FlatList, StyleSheet, Alert, Share, Platform, Modal, Pressable, ActivityIndicator, TextInput, Linking, Keyboard } from "react-native";
 import * as Haptics from "expo-haptics";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
@@ -315,11 +315,20 @@ export default function SettingsScreen() {
     setEditLoading(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      // Dismiss keyboard first (critical on iOS)
+      Keyboard.dismiss();
+      
+      // Give iOS time to commit any pending operations
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const updates: Partial<Business> = { [editingField]: editValue };
       console.log("Saving field:", editingField, "with value:", editValue);
       const updated = await api.updateBusiness(updates);
       console.log("Save successful:", updated);
       setBusiness(updated);
+      
+      // Only close modal AFTER persistence completes
       setEditModalVisible(false);
       setEditingField(null);
       setEditValue("");

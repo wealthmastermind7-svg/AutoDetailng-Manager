@@ -9,6 +9,7 @@ import {
   ScrollView,
   FlatList,
   ActivityIndicator,
+  Keyboard,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
@@ -101,6 +102,13 @@ export default function ServiceEditorScreen() {
     setSaving(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      
+      // Dismiss keyboard first (critical on iOS)
+      Keyboard.dismiss();
+      
+      // Give iOS time to commit any pending operations
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       console.log("Saving service with businessId:", api.getBusinessId());
       if (serviceId) {
         console.log("Updating service:", serviceId);
@@ -120,6 +128,8 @@ export default function ServiceEditorScreen() {
         });
       }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
+      // Only navigate AFTER persistence completes
       navigation.goBack();
     } catch (error) {
       console.error("Error saving service:", error);
