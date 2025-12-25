@@ -45,14 +45,27 @@ export default function ServiceEditorScreen() {
   const [activeTab, setActiveTab] = useState<"details" | "links">("details");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [businessReady, setBusinessReady] = useState(!!api.getBusinessId());
 
   const serviceId = (route.params as any)?.serviceId;
 
   useEffect(() => {
-    if (serviceId) {
+    // Wait for business to be ready
+    const checkBusinessReady = setInterval(() => {
+      if (api.getBusinessId()) {
+        setBusinessReady(true);
+        clearInterval(checkBusinessReady);
+      }
+    }, 100);
+
+    return () => clearInterval(checkBusinessReady);
+  }, []);
+
+  useEffect(() => {
+    if (serviceId && businessReady) {
       loadService();
     }
-  }, [serviceId]);
+  }, [serviceId, businessReady]);
 
   const loadService = async () => {
     setLoading(true);
@@ -69,8 +82,9 @@ export default function ServiceEditorScreen() {
   };
 
   const handleSave = async () => {
-    if (!api.getBusinessId()) {
-      alert("Business not initialized. Please restart the app.");
+    // Check business is ready
+    if (!businessReady || !api.getBusinessId()) {
+      alert("Business is not ready. Please wait a moment and try again.");
       return;
     }
 
@@ -87,7 +101,9 @@ export default function ServiceEditorScreen() {
     setSaving(true);
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      console.log("Saving service with businessId:", api.getBusinessId());
       if (serviceId) {
+        console.log("Updating service:", serviceId);
         await api.updateService(serviceId, {
           name: service.name,
           duration: service.duration,
@@ -95,6 +111,7 @@ export default function ServiceEditorScreen() {
           description: service.description,
         });
       } else {
+        console.log("Creating new service");
         await api.createService({
           name: service.name,
           duration: service.duration,
@@ -102,6 +119,7 @@ export default function ServiceEditorScreen() {
           description: service.description,
         });
       }
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       navigation.goBack();
     } catch (error) {
       console.error("Error saving service:", error);
