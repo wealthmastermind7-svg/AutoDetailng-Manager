@@ -70,7 +70,8 @@ export default function SettingsScreen() {
 
   useFocusEffect(
     React.useCallback(() => {
-      if (api.getBusinessId()) {
+      const bidSync = api.getBusinessId();
+      if (bidSync) {
         loadSettings();
       }
     }, [])
@@ -213,7 +214,7 @@ export default function SettingsScreen() {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               await api.clearAllData();
               Alert.alert("Success", "All data has been cleared", 
-                [{ text: "OK", onPress: () => navigation.navigate("DashboardTab" as any) }]
+                [{ text: "OK", onPress: () => navigation.navigate("DashboardTab" as any) }] as any
               );
             } catch (error) {
               console.error("Error clearing data:", error);
@@ -237,7 +238,7 @@ export default function SettingsScreen() {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const businessLabel = DEMO_TYPES.find(t => t.id === businessType)?.label;
       Alert.alert("Success", `Demo data for ${businessLabel} has been loaded`,
-        [{ text: "View Dashboard", onPress: () => navigation.navigate("DashboardTab" as any) }]
+        [{ text: "View Dashboard", onPress: () => navigation.navigate("DashboardTab" as any) }] as any
       );
     } catch (error) {
       console.error("Error initializing demo data:", error);

@@ -15,8 +15,18 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function App() {
   useEffect(() => {
-    // Load persisted business ID from storage on app startup
-    api.loadBusinessId().catch(console.error);
+    // Load persisted business ID and business object on app startup
+    (async () => {
+      try {
+        const businessId = await api.loadBusinessId();
+        if (businessId) {
+          // Ensure business object is loaded with all data (slug, etc)
+          await api.getBusiness();
+        }
+      } catch (error) {
+        console.error("Error loading app state:", error);
+      }
+    })();
   }, []);
 
   return (

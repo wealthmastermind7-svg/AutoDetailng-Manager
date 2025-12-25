@@ -321,7 +321,7 @@ class ApiClient {
   }
 
   async clearAllData(): Promise<void> {
-    console.log("Clear data not implemented for API - would delete all business data");
+    return makeRequest<void>("DELETE", `${this.getBusinessPath()}/data`);
   }
 
   async getQRCode(): Promise<{ qrCode: string; bookingUrl: string } | null> {
