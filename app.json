@@ -11,7 +11,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cerolauto.bookflowx",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": ["remote-notification"],
+        "NSUserNotificationUsageDescription": "Notifications alert you about new bookings and appointment updates",
+        "NSCameraUsageDescription": "Camera access is required for QR code scanning",
+        "NSPhotoLibraryUsageDescription": "Photo library access is required for image sharing",
+        "NSPhotoLibraryAddUsageDescription": "Photo library access is required to save images"
       }
     },
     "android": {

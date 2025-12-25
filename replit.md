@@ -140,6 +140,14 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
 - Public booking URL format: http://localhost:5000/book/{businessSlug}
 - QR codes redirect to booking page via generated QR code endpoint
 
+## Critical TestFlight Fix (Dec 25, 2025)
+**iOS Permission Declarations Added to app.json:**
+- **Root Cause**: TestFlight enforces Apple sandbox rules strictly, while Expo Go has permissive container
+- **Problem**: Missing iOS permission strings in infoPlist caused silent permission denials in TestFlight
+- **Solution**: Added required NSUserNotificationUsageDescription, NSCameraUsageDescription, NSPhotoLibraryUsageDescription, NSPhotoLibraryAddUsageDescription
+- **Impact**: Notifications, QR code sharing, and image operations now work in TestFlight
+- **Next Action**: Rebuild and deploy new TestFlight binary - permissions only apply on fresh build
+
 ## Recent Updates (Dec 24, 2025)
 - **Multi-Business-Type Demo Data Feature:**
   - Added modal selector in Settings → Data Management → Load Demo Data
