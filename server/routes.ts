@@ -60,12 +60,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // === BUSINESSES API ===
   
-  // Get business by slug (public - for booking flow)
-  app.get("/api/businesses/:slug", async (req: Request, res: Response) => {
+  // Get business by ID (for admin dashboard)
+  app.get("/api/businesses/:id", async (req: Request, res: Response) => {
     try {
-      const business = await storage.getBusinessBySlug(req.params.slug);
+      const business = await storage.getBusiness(req.params.id);
       if (!business) {
-        return res.status(404).json({ error: "Business not found" });
+        // Try by slug as fallback for backwards compatibility
+        const bySlug = await storage.getBusinessBySlug(req.params.id);
+        if (!bySlug) {
+          return res.status(404).json({ error: "Business not found" });
+        }
+        const bookingUrl = getBookingUrlForBusiness(bySlug, req);
+        return res.json({ ...bySlug, bookingUrl });
       }
       const bookingUrl = getBookingUrlForBusiness(business, req);
       res.json({ ...business, bookingUrl });
