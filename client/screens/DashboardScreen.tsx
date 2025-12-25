@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, FlatList, StyleSheet } from "react-native";
+import { View, FlatList, StyleSheet, Pressable } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -21,6 +21,7 @@ export default function DashboardScreen() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAllBookings, setShowAllBookings] = useState(false);
 
   useEffect(() => {
     initializeBusiness();
@@ -82,7 +83,7 @@ export default function DashboardScreen() {
   const upcomingBookings = bookings
     .filter((b) => b.status !== "cancelled")
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 3);
+    .slice(0, showAllBookings ? undefined : 3);
 
   const graphData = stats?.weeklyData?.map((d) => ({
     label: d.day,
@@ -132,9 +133,28 @@ export default function DashboardScreen() {
       case 2:
         return (
           <View style={styles.section}>
-            <ThemedText type="h3" style={styles.sectionTitle}>
-              Upcoming Bookings
-            </ThemedText>
+            <View style={styles.sectionHeader}>
+              <ThemedText type="h3" style={styles.sectionTitle}>
+                Upcoming Bookings
+              </ThemedText>
+              <Pressable
+                onPress={() => setShowAllBookings(!showAllBookings)}
+                style={({ pressed }) => [
+                  styles.toggleButton,
+                  { backgroundColor: pressed ? theme.text : theme.backgroundSecondary },
+                ]}
+              >
+                <ThemedText
+                  type="body"
+                  style={[
+                    styles.toggleButtonText,
+                    { color: showAllBookings ? theme.text : theme.textSecondary },
+                  ]}
+                >
+                  {showAllBookings ? "All" : "This Week"}
+                </ThemedText>
+              </Pressable>
+            </View>
             {upcomingBookings.length > 0 ? (
               upcomingBookings.map((booking) => (
                 <BookingCard
@@ -195,8 +215,23 @@ const styles = StyleSheet.create({
   section: {
     marginTop: Spacing.lg,
   },
-  sectionTitle: {
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: Spacing.md,
+  },
+  sectionTitle: {
+    flex: 1,
+  },
+  toggleButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 8,
+  },
+  toggleButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
   emptyState: {
     padding: Spacing.xl,

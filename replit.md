@@ -31,7 +31,7 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - **Navigation**: Structured with `MainTabNavigator` for admin functions and `BookingFlowNavigator` for the public booking process, alongside modal screens for editors.
 
 ### Feature Specifications
-- **Dashboard**: Displays revenue metrics and booking graphs.
+- **Dashboard**: Displays revenue metrics and booking graphs. Toggle button to view upcoming bookings as "This Week" (top 3) or "All" bookings.
 - **Calendar**: Day selection with booking previews.
 - **Service Management**: CRUD operations for services.
 - **Customer Management**: Lists customers with booking counts.
@@ -142,6 +142,12 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - Ensure `extra.apiDomain` in app.json is set to your production domain
 - Verify backend is accessible at that domain
 - Increment build number and rebuild
+
+### Dashboard Bookings Toggle (Dec 25, 2025) ✅
+- Added toggle button on Upcoming Bookings section: "This Week" (default, shows top 3) or "All" (shows all upcoming bookings)
+- File: `client/screens/DashboardScreen.tsx`
+- Implementation: State-driven toggle that conditionally slices the bookings array
+- Visual: Button next to section title with active/inactive styling
 
 ## Testing Checklist for TestFlight v1.0
 
