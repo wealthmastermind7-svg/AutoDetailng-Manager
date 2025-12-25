@@ -1,4 +1,7 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getApiUrl } from "./query-client";
+
+const BUSINESS_ID_KEY = "bookflow_business_id";
 
 function getApiBase(): string {
   return getApiUrl();
@@ -103,10 +106,24 @@ class ApiClient {
 
   setBusinessId(id: string) {
     this.businessId = id;
+    AsyncStorage.setItem(BUSINESS_ID_KEY, id).catch(console.error);
   }
 
   getBusinessId(): string | null {
     return this.businessId;
+  }
+
+  async loadBusinessId(): Promise<string | null> {
+    if (this.businessId) return this.businessId;
+    try {
+      const saved = await AsyncStorage.getItem(BUSINESS_ID_KEY);
+      if (saved) {
+        this.businessId = saved;
+      }
+      return saved;
+    } catch {
+      return null;
+    }
   }
 
   private getBusinessPath(): string {
@@ -121,7 +138,7 @@ class ApiClient {
       const res = await fetch(`${getApiBase()}api/businesses/demo-business`);
       if (res.ok) {
         const business = await res.json();
-        this.businessId = business.id;
+        this.setBusinessId(business.id);
         return business;
       }
     } catch (error) {
@@ -136,14 +153,14 @@ class ApiClient {
         phone: "+1 (555) 123-4567",
         email: "demo@bookflow.app",
       });
-      this.businessId = newBusiness.id;
+      this.setBusinessId(newBusiness.id);
       return newBusiness;
     } catch (error) {
       try {
         const res = await fetch(`${getApiBase()}api/businesses/demo-business`);
         if (res.ok) {
           const business = await res.json();
-          this.businessId = business.id;
+          this.setBusinessId(business.id);
           return business;
         }
       } catch {}

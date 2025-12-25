@@ -43,39 +43,16 @@ export default function ServiceEditorScreen() {
   });
 
   const [activeTab, setActiveTab] = useState<"details" | "links">("details");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [businessReady, setBusinessReady] = useState(false);
 
   const serviceId = (route.params as any)?.serviceId;
 
   useEffect(() => {
-    initializeBusiness();
-  }, []);
-
-  useEffect(() => {
-    if (serviceId && businessReady) {
+    if (serviceId) {
       loadService();
-    } else if (!serviceId && businessReady) {
-      setLoading(false);
     }
-  }, [serviceId, businessReady]);
-
-  const initializeBusiness = async () => {
-    try {
-      if (!api.getBusinessId()) {
-        await api.getOrCreateBusiness();
-      }
-      setBusinessReady(true);
-      if (!serviceId) {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Error initializing business:", error);
-      setLoading(false);
-      alert("Unable to connect to server. Please try again.");
-    }
-  };
+  }, [serviceId]);
 
   const loadService = async () => {
     setLoading(true);
@@ -92,8 +69,8 @@ export default function ServiceEditorScreen() {
   };
 
   const handleSave = async () => {
-    if (!businessReady || !api.getBusinessId()) {
-      alert("Still connecting to server. Please wait a moment and try again.");
+    if (!api.getBusinessId()) {
+      alert("Business not initialized. Please restart the app.");
       return;
     }
 
