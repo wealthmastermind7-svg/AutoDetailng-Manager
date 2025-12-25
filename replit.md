@@ -39,6 +39,7 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - **Public Booking Flow**: A 4-screen process (Service → Time → Checkout → Confirmation) accessible via unique business slugs.
 - **Demo Data**: Multi-business-type demo data feature with 5 pre-configured business verticals (Salon, Auto Detailing, Solar Installation, Coaching, Fitness) for showcase purposes.
 - **QR Code Generation**: For sharing booking links.
+- **Embeddable Booking Widget**: Calendly-style widget for external websites with inline, popup button, and popup text link variants.
 
 ### System Design Choices
 - **Multi-Tenancy**: Implemented at the API and database levels, ensuring data isolation per business.
@@ -63,6 +64,7 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - Multi-business-type demo data (5 verticals)
 - Public booking flow (4-screen checkout)
 - QR code sharing for booking links
+- Embeddable booking widget (Calendly-style with 3 embed types)
 - Haptic feedback on all interactions
 - Business settings (name, website, phone)
 - Comprehensive iOS lifecycle fixes for data persistence

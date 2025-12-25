@@ -367,6 +367,25 @@ class ApiClient {
   async bulkUpdateAvailability(schedules: AvailabilitySchedule[]): Promise<Availability[]> {
     return makeRequest<Availability[]>("PUT", `${this.getBusinessPath()}/availability`, { schedules });
   }
+
+  async getEmbedCode(): Promise<EmbedCode | null> {
+    try {
+      const res = await fetch(`${getApiBase()}${this.getBusinessPath()}/embed-code`);
+      if (!res.ok) return null;
+      return res.json();
+    } catch {
+      return null;
+    }
+  }
+}
+
+export interface EmbedCode {
+  embedUrl: string;
+  scriptUrl: string;
+  inlineCode: string;
+  popupButtonCode: string;
+  popupTextCode: string;
+  businessSlug: string;
 }
 
 export const api = new ApiClient();

@@ -23,6 +23,9 @@ const __dirname = dirname(__filename);
 
 // Load booking HTML into memory for production reliability
 let bookingHtmlContent: string = "";
+let embedHtmlContent: string = "";
+let embedJsContent: string = "";
+
 async function loadBookingHtml() {
   const paths = [
     path.resolve(__dirname, "templates/booking.html"),
@@ -41,6 +44,53 @@ async function loadBookingHtml() {
   console.warn("Warning: Could not load booking.html. Paths tried:", paths);
 }
 
+async function loadEmbedHtml() {
+  const paths = [
+    path.resolve(__dirname, "templates/embed.html"),
+    path.resolve(process.cwd(), "server/templates/embed.html"),
+    path.resolve(process.cwd(), "templates/embed.html"),
+  ];
+  
+  for (const p of paths) {
+    try {
+      embedHtmlContent = fs.readFileSync(p, "utf-8");
+      console.log(`Loaded embed.html from: ${p}`);
+      return;
+    } catch {}
+  }
+  
+  console.warn("Warning: Could not load embed.html. Paths tried:", paths);
+}
+
+async function loadEmbedJs() {
+  const paths = [
+    path.resolve(__dirname, "static/embed.js"),
+    path.resolve(process.cwd(), "server/static/embed.js"),
+    path.resolve(process.cwd(), "static/embed.js"),
+  ];
+  
+  for (const p of paths) {
+    try {
+      embedJsContent = fs.readFileSync(p, "utf-8");
+      console.log(`Loaded embed.js from: ${p}`);
+      return;
+    } catch {}
+  }
+  
+  console.warn("Warning: Could not load embed.js. Paths tried:", paths);
+}
+
+function getEmbedOrigin(req: Request): string {
+  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  if (domain && !domain.includes('localhost')) {
+    const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/:5000$/, '');
+    return `https://${cleanDomain}`;
+  }
+  const host = req.get('host') || 'localhost:5000';
+  const protocol = req.protocol;
+  return `${protocol}://${host}`;
+}
+
 // Helper function to generate booking URL
 function getBookingUrlForBusiness(business: any, req: Request): string {
   const domain = process.env.EXPO_PUBLIC_DOMAIN;
@@ -55,8 +105,10 @@ function getBookingUrlForBusiness(business: any, req: Request): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Load booking HTML at startup
+  // Load templates at startup
   await loadBookingHtml();
+  await loadEmbedHtml();
+  await loadEmbedJs();
   
   // === BUSINESSES API ===
   
@@ -676,6 +728,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.type("text/html").send(bookingHtmlContent);
     } else {
       res.status(500).json({ error: "Booking page not available" });
+    }
+  });
+
+  // === EMBED WIDGET ===
+  
+  // Serve embeddable booking widget (iframe-friendly)
+  app.get("/embed/:slug", (req: Request, res: Response) => {
+    if (embedHtmlContent) {
+      res.setHeader('X-Frame-Options', 'ALLOWALL');
+      res.setHeader('Content-Security-Policy', "frame-ancestors *;");
+      res.type("text/html").send(embedHtmlContent);
+    } else {
+      res.status(500).json({ error: "Embed widget not available" });
+    }
+  });
+  
+  // Serve embed.js loader script
+  app.get("/embed.js", (req: Request, res: Response) => {
+    if (embedJsContent) {
+      const origin = getEmbedOrigin(req);
+      const jsWithOrigin = embedJsContent.replace(/\{\{EMBED_ORIGIN\}\}/g, origin);
+      res.type("application/javascript").send(jsWithOrigin);
+    } else {
+      res.status(500).json({ error: "Embed script not available" });
+    }
+  });
+
+  // Get embed code snippets for a business
+  app.get("/api/businesses/:businessId/embed-code", async (req: Request, res: Response) => {
+    try {
+      const business = await storage.getBusiness(req.params.businessId);
+      if (!business) {
+        return res.status(404).json({ error: "Business not found" });
+      }
+      
+      const origin = getEmbedOrigin(req);
+      const embedUrl = `${origin}/embed/${business.slug}`;
+      const scriptUrl = `${origin}/embed.js`;
+      
+      const buttonText = (req.query.buttonText as string) || 'Book Now';
+      const buttonColor = (req.query.buttonColor as string) || '#000000';
+      
+      const inlineCode = `<!-- BookFlow Inline Widget -->
+<div id="bookflow-widget"></div>
+<script src="${scriptUrl}"></script>
+<script>
+  new BookFlowWidget({
+    businessSlug: '${business.slug}',
+    type: 'inline',
+    container: '#bookflow-widget'
+  });
+</script>`;
+
+      const popupButtonCode = `<!-- BookFlow Popup Button -->
+<div id="bookflow-button"></div>
+<script src="${scriptUrl}"></script>
+<script>
+  new BookFlowWidget({
+    businessSlug: '${business.slug}',
+    type: 'popup-button',
+    container: '#bookflow-button',
+    buttonText: '${buttonText}',
+    buttonColor: '${buttonColor}'
+  });
+</script>`;
+
+      const popupTextCode = `<!-- BookFlow Popup Text Link -->
+<span id="bookflow-link"></span>
+<script src="${scriptUrl}"></script>
+<script>
+  new BookFlowWidget({
+    businessSlug: '${business.slug}',
+    type: 'popup-text',
+    container: '#bookflow-link',
+    buttonText: '${buttonText}',
+    buttonColor: '${buttonColor}'
+  });
+</script>`;
+
+      res.json({
+        embedUrl,
+        scriptUrl,
+        inlineCode,
+        popupButtonCode,
+        popupTextCode,
+        businessSlug: business.slug
+      });
+    } catch (error) {
+      console.error("Error generating embed code:", error);
+      res.status(500).json({ error: "Failed to generate embed code" });
     }
   });
 
