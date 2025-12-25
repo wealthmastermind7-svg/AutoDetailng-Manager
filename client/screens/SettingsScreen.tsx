@@ -373,6 +373,16 @@ export default function SettingsScreen() {
           onPress: handleShowEmbedModal,
           showChevron: true,
         },
+        {
+          icon: "message-circle" as const,
+          title: "Booking Assistant",
+          subtitle: "Coming Soon",
+          onPress: () => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Alert.alert("Coming Soon", "AI booking assistant will be available in v1.1");
+          },
+          showChevron: true,
+        },
       ],
     },
     {
