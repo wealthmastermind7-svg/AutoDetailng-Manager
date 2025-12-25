@@ -33,7 +33,7 @@ function setupCors(app: express.Application) {
     }
 
     if (process.env.REPLIT_DOMAINS) {
-      process.env.REPLIT_DOMAINS.split(",").forEach((d) => {
+      process.env.REPLIT_DOMAINS.split(",").forEach((d: string) => {
         const domain = d.trim();
         origins.add(`https://${domain}`);
         if (!domain.includes(":")) {
