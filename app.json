@@ -46,6 +46,9 @@
     ],
     "experiments": {
       "reactCompiler": true
+    },
+    "extra": {
+      "apiDomain": "bookflowx.cerolauto.store"
     }
   }
 }

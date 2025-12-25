@@ -26,7 +26,7 @@ export function getApiUrl(): string {
     }
   }
 
-  // For Expo Go (native) - try to use EXPO_PUBLIC_DOMAIN
+  // For Expo Go (native) - try to use EXPO_PUBLIC_DOMAIN first
   let host = process.env.EXPO_PUBLIC_DOMAIN || "";
   
   // Handle case where env var contains literal $REPLIT_DEV_DOMAIN (not interpolated)
@@ -41,6 +41,17 @@ export function getApiUrl(): string {
     }
   }
 
+  // If still no host, try to get from app config (for TestFlight production builds)
+  if (!host) {
+    try {
+      const Constants = require("expo-constants").default;
+      host = Constants?.expoConfig?.extra?.apiDomain || "";
+    } catch (e) {
+      // Silently fail if Constants not available
+    }
+  }
+
+  // Final fallback
   if (!host) {
     host = "localhost:5000";
   }
@@ -84,12 +95,18 @@ export function getBookingDomain(): string {
     }
   }
 
-  // For native Expo (TestFlight/Expo Go) - use environment variable directly
-  let domain = process.env.EXPO_PUBLIC_DOMAIN || "localhost:5000";
+  // For native Expo (TestFlight/Expo Go) - use environment variable or app config
+  let domain = process.env.EXPO_PUBLIC_DOMAIN || "";
 
-  // Only override for literal template strings or missing values
+  // Handle literal template strings
   if (domain.includes("$REPLIT_DEV_DOMAIN") || domain === "") {
-    domain = "localhost:5000";
+    // Try to get from app config (for TestFlight production builds)
+    try {
+      const Constants = require("expo-constants").default;
+      domain = Constants?.expoConfig?.extra?.apiDomain || "localhost:5000";
+    } catch (e) {
+      domain = "localhost:5000";
+    }
   }
 
   // Strip any protocol if present
