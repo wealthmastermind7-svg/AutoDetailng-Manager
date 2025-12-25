@@ -14,13 +14,6 @@ import { SettingsRow } from "@/components/SettingsRow";
 import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
-import { 
-  getNotificationPermissionStatus, 
-  requestNotificationPermissions, 
-  registerPushToken, 
-  unregisterPushToken,
-  NotificationPermissionStatus 
-} from "@/lib/notifications";
 import { getApiUrl } from "@/lib/query-client";
 
 export default function SettingsScreen() {
@@ -29,9 +22,6 @@ export default function SettingsScreen() {
   const { theme, isDark } = useTheme();
   const navigation = useNavigation();
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermissionStatus | null>(null);
-  const [notificationLoading, setNotificationLoading] = useState(false);
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(false);
   const [demoDataLoading, setDemoDataLoading] = useState(false);
@@ -56,18 +46,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     initializeBusiness();
-    checkNotificationPermission();
   }, []);
-
-  const checkNotificationPermission = async () => {
-    if (Platform.OS === 'web') {
-      setNotificationPermission({ granted: false, canAskAgain: false, status: 'denied' });
-      return;
-    }
-    const status = await getNotificationPermissionStatus();
-    setNotificationPermission(status);
-    setNotificationsEnabled(status.granted && (business?.notificationsEnabled ?? false));
-  };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -93,110 +72,11 @@ export default function SettingsScreen() {
       const biz = await api.getBusiness();
       if (biz) {
         setBusiness(biz);
-        const permStatus = await getNotificationPermissionStatus();
-        setNotificationPermission(permStatus);
-        setNotificationsEnabled(permStatus.granted && (biz.notificationsEnabled ?? false));
       }
     } catch (error) {
       console.error("Error loading settings:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleNotificationToggle = async (enabled: boolean) => {
-    if (!business) return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setNotificationLoading(true);
-
-    try {
-      if (enabled) {
-        if (Platform.OS === 'web') {
-          Alert.alert(
-            "Not Available",
-            "Push notifications are not available on web. Please use the Expo Go app on your mobile device."
-          );
-          setNotificationLoading(false);
-          return;
-        }
-
-        const permStatus = await requestNotificationPermissions();
-        setNotificationPermission(permStatus);
-
-        if (!permStatus.granted) {
-          if (!permStatus.canAskAgain) {
-            Alert.alert(
-              "Permission Required",
-              "Please enable notifications in your device settings to receive booking alerts.",
-[
-                { text: "Cancel", style: "cancel" },
-                { 
-                  text: "Open Settings", 
-                  onPress: async () => {
-                    try {
-                      await Linking.openSettings();
-                    } catch (error) {
-                      console.error("Could not open settings:", error);
-                    }
-                  }
-                }
-              ]
-            );
-          }
-          setNotificationLoading(false);
-          return;
-        }
-
-        const registered = await registerPushToken(business.id);
-        if (!registered) {
-          Alert.alert("Error", "Failed to register for notifications. Please try again.");
-          setNotificationLoading(false);
-          return;
-        }
-
-        await api.updateBusiness({ notificationsEnabled: true });
-        setNotificationsEnabled(true);
-        setBusiness({ ...business, notificationsEnabled: true });
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        Alert.alert("Success", "Notifications enabled. You will be notified when customers book appointments.");
-      } else {
-        await unregisterPushToken(business.id);
-        await api.updateBusiness({ notificationsEnabled: false });
-        setNotificationsEnabled(false);
-        setBusiness({ ...business, notificationsEnabled: false });
-      }
-    } catch (error) {
-      console.error("Error toggling notifications:", error);
-      Alert.alert("Error", "Failed to update notification settings. Please try again.");
-    } finally {
-      setNotificationLoading(false);
-    }
-  };
-
-  const handleTestNotification = async () => {
-    if (!business) return;
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    try {
-      const response = await fetch(new URL(`/api/businesses/${business.id}/test-notification`, getApiUrl()).toString(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      const result = await response.json();
-      
-      if (result.success && result.sentCount > 0) {
-        Alert.alert("Test Sent", "A test notification has been sent to your device.");
-      } else if (result.sentCount === 0) {
-        Alert.alert("No Devices", "No devices are registered for notifications. Make sure you've enabled notifications on a mobile device.");
-      } else {
-        Alert.alert("Error", result.errors?.join(", ") || "Failed to send test notification.");
-      }
-    } catch (error) {
-      console.error("Error sending test notification:", error);
-      Alert.alert("Error", "Failed to send test notification. Please try again.");
     }
   };
 
@@ -214,9 +94,9 @@ export default function SettingsScreen() {
             try {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
               await api.clearAllData();
-              Alert.alert("Success", "All data has been cleared", 
-                [{ text: "OK", onPress: () => navigation.navigate("DashboardTab" as any) }] as any
-              );
+              Alert.alert("Success", "All data has been cleared", [
+                { text: "OK", onPress: () => navigation.navigate("DashboardTab" as any) }
+              ]);
             } catch (error) {
               console.error("Error clearing data:", error);
               Alert.alert("Error", "Failed to clear data. Please try again.");
@@ -238,9 +118,9 @@ export default function SettingsScreen() {
       await api.initializeDemoData(businessType);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const businessLabel = DEMO_TYPES.find(t => t.id === businessType)?.label;
-      Alert.alert("Success", `Demo data for ${businessLabel} has been loaded`,
-        [{ text: "View Dashboard", onPress: () => navigation.navigate("DashboardTab" as any) }] as any
-      );
+      Alert.alert("Success", `Demo data for ${businessLabel} has been loaded`, [
+        { text: "View Dashboard", onPress: () => navigation.navigate("DashboardTab" as any) }
+      ]);
     } catch (error) {
       console.error("Error initializing demo data:", error);
       Alert.alert("Error", "Failed to load demo data. Please try again.");
@@ -387,32 +267,6 @@ export default function SettingsScreen() {
           subtitle: "Display QR code for customers to scan",
           onPress: handleShowQRCode,
           showChevron: true,
-        },
-      ],
-    },
-    {
-      section: "Notifications",
-      items: [
-        {
-          icon: "bell" as const,
-          title: "Enable Notifications",
-          subtitle: Platform.OS === 'web' 
-            ? "Use Expo Go on mobile for notifications" 
-            : notificationsEnabled 
-              ? "Receive alerts for new bookings" 
-              : "Get notified when customers book",
-          hasToggle: true,
-          toggleValue: notificationsEnabled,
-          onToggle: handleNotificationToggle,
-          disabled: notificationLoading || Platform.OS === 'web',
-        },
-        {
-          icon: "send" as const,
-          title: "Send Test Notification",
-          subtitle: "Verify notifications are working",
-          onPress: handleTestNotification,
-          showChevron: true,
-          disabled: !notificationsEnabled || Platform.OS === 'web',
         },
       ],
     },

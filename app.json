@@ -11,8 +11,6 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.cerolauto.bookflowx",
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"],
-        "NSUserNotificationUsageDescription": "Notifications alert you about new bookings and appointment updates",
         "NSCameraUsageDescription": "Camera access is required for QR code scanning",
         "NSPhotoLibraryUsageDescription": "Photo library access is required for image sharing",
         "NSPhotoLibraryAddUsageDescription": "Photo library access is required to save images"
@@ -25,8 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.cerolauto.bookflowx",
-      "useNextNotificationsApi": true
+      "package": "com.cerolauto.bookflowx"
     },
     "web": {
       "output": "single",
@@ -45,22 +42,10 @@
           }
         }
       ],
-      "expo-web-browser",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#000000",
-          "sounds": []
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "reactCompiler": true
-    },
-    "notification": {
-      "icon": "./assets/images/icon.png",
-      "color": "#000000"
     }
   }
 }
