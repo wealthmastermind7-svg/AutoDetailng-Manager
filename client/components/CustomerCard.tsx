@@ -11,8 +11,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface CustomerCardProps {
   name: string;
   email: string;
@@ -54,16 +52,16 @@ export function CustomerCard({
   };
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.card,
-        { backgroundColor: theme.backgroundDefault },
-        animatedStyle,
-      ]}
-    >
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          { backgroundColor: theme.backgroundDefault },
+        ]}
+      >
       <View style={styles.content}>
         <View style={[styles.avatar, { backgroundColor: theme.accent }]}>
           <ThemedText
@@ -95,7 +93,8 @@ export function CustomerCard({
           </ThemedText>
         </View>
       </View>
-    </AnimatedPressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 

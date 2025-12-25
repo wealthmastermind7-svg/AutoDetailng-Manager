@@ -10,8 +10,6 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { Shadows, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface FloatingActionButtonProps {
   icon: keyof typeof Feather.glyphMap;
   onPress: () => void;
@@ -40,20 +38,20 @@ export function FloatingActionButton({
   };
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.fab,
-        { backgroundColor: theme.accent },
-        Shadows.subtle,
-        animatedStyle,
-        style,
-      ]}
-    >
-      <Feather name={icon} size={24} color={theme.buttonText} />
-    </AnimatedPressable>
+    <Animated.View style={[animatedStyle, style]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.fab,
+          { backgroundColor: theme.accent },
+          Shadows.subtle,
+        ]}
+      >
+        <Feather name={icon} size={24} color={theme.buttonText} />
+      </Pressable>
+    </Animated.View>
   );
 }
 

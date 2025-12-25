@@ -121,6 +121,14 @@ A scalable multi-tenant booking platform built with React Native (Expo), Express
      - Fallback to localhost:5000 for local development
    - Status: FIXED - Both web preview and Expo Go now connect to API successfully
 
+6. **Button/Touch Interactions Not Working in TestFlight/Production** - RESOLVED (Dec 25, 2025)
+   - Issue: All buttons and touchable elements (buttons, cards, calendar days) did not respond to touches in TestFlight builds
+   - Root Cause: `Animated.createAnimatedComponent(Pressable)` (AnimatedPressable) has known bugs in production iOS builds with React Native Reanimated
+   - Fix: Replaced AnimatedPressable pattern with Animated.View wrapping regular Pressable in all 9 affected components:
+     - Button, ServiceCard, Card, FloatingActionButton, CustomerCard, BookingCard, CalendarDay, TimeSlotButton, AnimatedMetricCard
+   - Technical Detail: Animation transforms now applied to outer Animated.View while touch handling stays on inner Pressable
+   - Status: FIXED - All touch interactions now work correctly in production builds
+
 ## Testing & Deployment
 - Local dev: Run `npm run server:dev && npm run expo:dev`, access web version at http://localhost:8081
 - TestFlight: App needs static build with `EXPO_PUBLIC_DOMAIN=elegant-canvas--wealthmastermin.replit.app`

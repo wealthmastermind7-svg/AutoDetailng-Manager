@@ -11,8 +11,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
 interface BookingCardProps {
@@ -79,16 +77,16 @@ export function BookingCard({
   };
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.card,
-        { backgroundColor: theme.backgroundDefault },
-        animatedStyle,
-      ]}
-    >
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          { backgroundColor: theme.backgroundDefault },
+        ]}
+      >
       <View style={styles.header}>
         <View style={styles.customerInfo}>
           <ThemedText type="h4" style={styles.customerName}>
@@ -116,7 +114,8 @@ export function BookingCard({
           </ThemedText>
         </View>
       </View>
-    </AnimatedPressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 

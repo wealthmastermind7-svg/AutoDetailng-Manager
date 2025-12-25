@@ -10,8 +10,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface CalendarDayProps {
   day: number;
   isSelected: boolean;
@@ -65,27 +63,28 @@ export function CalendarDay({
   };
 
   return (
-    <AnimatedPressable
-      onPress={isDisabled ? undefined : onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.day,
-        {
-          backgroundColor: getBackgroundColor(),
-          borderColor: getBorderColor(),
-          borderWidth: isToday && !isSelected ? 2 : 0,
-        },
-        animatedStyle,
-      ]}
-    >
-      <ThemedText
-        type="body"
-        style={[styles.dayText, { color: getTextColor() }]}
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={isDisabled ? undefined : onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.day,
+          {
+            backgroundColor: getBackgroundColor(),
+            borderColor: getBorderColor(),
+            borderWidth: isToday && !isSelected ? 2 : 0,
+          },
+        ]}
       >
-        {day}
-      </ThemedText>
-    </AnimatedPressable>
+        <ThemedText
+          type="body"
+          style={[styles.dayText, { color: getTextColor() }]}
+        >
+          {day}
+        </ThemedText>
+      </Pressable>
+    </Animated.View>
   );
 }
 

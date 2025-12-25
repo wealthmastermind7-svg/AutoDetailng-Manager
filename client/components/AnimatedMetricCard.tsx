@@ -12,8 +12,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface AnimatedMetricCardProps {
   title: string;
   value: string | number;
@@ -58,30 +56,30 @@ export function AnimatedMetricCard({
   };
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.card,
-        { backgroundColor: theme.backgroundDefault },
-        animatedStyle,
-        style,
-      ]}
-    >
-      <ThemedText type="small" style={styles.title}>
-        {title}
-      </ThemedText>
-      <ThemedText type="display" style={styles.value}>
-        {value}
-      </ThemedText>
-      {subtitle ? (
-        <ThemedText type="caption" style={styles.subtitle}>
-          {subtitle}
+    <Animated.View style={[animatedStyle, style]}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          { backgroundColor: theme.backgroundDefault },
+        ]}
+      >
+        <ThemedText type="small" style={styles.title}>
+          {title}
         </ThemedText>
-      ) : null}
-      {children}
-    </AnimatedPressable>
+        <ThemedText type="display" style={styles.value}>
+          {value}
+        </ThemedText>
+        {subtitle ? (
+          <ThemedText type="caption" style={styles.subtitle}>
+            {subtitle}
+          </ThemedText>
+        ) : null}
+        {children}
+      </Pressable>
+    </Animated.View>
   );
 }
 

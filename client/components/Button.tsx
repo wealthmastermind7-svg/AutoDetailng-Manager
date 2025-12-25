@@ -27,8 +27,6 @@ const springConfig: WithSpringConfig = {
   energyThreshold: 0.001,
 };
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function Button({
   onPress,
   children,
@@ -56,28 +54,29 @@ export function Button({
   };
 
   return (
-    <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={disabled}
-      style={[
-        styles.button,
-        {
-          backgroundColor: theme.link,
-          opacity: disabled ? 0.5 : 1,
-        },
-        style,
-        animatedStyle,
-      ]}
-    >
-      <ThemedText
-        type="body"
-        style={[styles.buttonText, { color: theme.buttonText }]}
+    <Animated.View style={[animatedStyle]}>
+      <Pressable
+        onPress={disabled ? undefined : onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled}
+        style={[
+          styles.button,
+          {
+            backgroundColor: theme.link,
+            opacity: disabled ? 0.5 : 1,
+          },
+          style,
+        ]}
       >
-        {children}
-      </ThemedText>
-    </AnimatedPressable>
+        <ThemedText
+          type="body"
+          style={[styles.buttonText, { color: theme.buttonText }]}
+        >
+          {children}
+        </ThemedText>
+      </Pressable>
+    </Animated.View>
   );
 }
 

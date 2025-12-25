@@ -11,8 +11,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface ServiceCardProps {
   name: string;
   duration: number;
@@ -56,17 +54,17 @@ export function ServiceCard({
   };
 
   return (
-    <AnimatedPressable
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.card,
-        compact ? styles.cardCompact : null,
-        { backgroundColor: theme.backgroundDefault },
-        animatedStyle,
-      ]}
-    >
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          compact ? styles.cardCompact : null,
+          { backgroundColor: theme.backgroundDefault },
+        ]}
+      >
       <View style={styles.header}>
         <ThemedText type={compact ? "h4" : "h3"} style={styles.name}>
           {name}
@@ -102,7 +100,8 @@ export function ServiceCard({
           </ThemedText>
         </View>
       ) : null}
-    </AnimatedPressable>
+      </Pressable>
+    </Animated.View>
   );
 }
 

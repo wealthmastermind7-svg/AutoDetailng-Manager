@@ -10,8 +10,6 @@ import { ThemedText } from "@/components/ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, AnimationConfig } from "@/constants/theme";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface TimeSlotButtonProps {
   time: string;
   selected: boolean;
@@ -44,29 +42,30 @@ export function TimeSlotButton({
   };
 
   return (
-    <AnimatedPressable
-      onPress={disabled ? undefined : onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[
-        styles.button,
-        {
-          backgroundColor: selected ? theme.accent : theme.backgroundDefault,
-          opacity: disabled ? 0.4 : 1,
-        },
-        animatedStyle,
-      ]}
-    >
-      <ThemedText
-        type="body"
+    <Animated.View style={animatedStyle}>
+      <Pressable
+        onPress={disabled ? undefined : onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         style={[
-          styles.text,
-          { color: selected ? theme.buttonText : theme.text },
+          styles.button,
+          {
+            backgroundColor: selected ? theme.accent : theme.backgroundDefault,
+            opacity: disabled ? 0.4 : 1,
+          },
         ]}
       >
-        {time}
-      </ThemedText>
-    </AnimatedPressable>
+        <ThemedText
+          type="body"
+          style={[
+            styles.text,
+            { color: selected ? theme.buttonText : theme.text },
+          ]}
+        >
+          {time}
+        </ThemedText>
+      </Pressable>
+    </Animated.View>
   );
 }
 
