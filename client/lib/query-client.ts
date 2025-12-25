@@ -5,8 +5,13 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  // In browser, check window.location first
-  if (typeof window !== "undefined" && window.location) {
+  // Check if we're in a true browser environment (not React Native)
+  const isRealBrowser = typeof window !== "undefined" && 
+    window.location && 
+    typeof window.location.hostname === "string" && 
+    window.location.hostname.length > 0;
+
+  if (isRealBrowser) {
     const currentHost = window.location.hostname;
     const currentProtocol = window.location.protocol;
     
@@ -26,34 +31,38 @@ export function getApiUrl(): string {
     }
   }
 
-  // For Expo Go (native) - try to use EXPO_PUBLIC_DOMAIN first
+  // For native apps (Expo Go, TestFlight, etc.)
+  // First try expo-constants (works for TestFlight/production builds)
+  try {
+    const Constants = require("expo-constants").default;
+    // Try multiple paths for different Expo SDK versions
+    const apiDomain = 
+      Constants?.expoConfig?.extra?.apiDomain ||
+      Constants?.manifest?.extra?.apiDomain ||
+      Constants?.manifest2?.extra?.expoClient?.extra?.apiDomain ||
+      "";
+    
+    if (apiDomain && apiDomain.length > 0) {
+      const protocol = apiDomain.includes("localhost") ? "http" : "https";
+      return `${protocol}://${apiDomain}/`;
+    }
+  } catch (e) {
+    // expo-constants not available
+  }
+
+  // Try EXPO_PUBLIC_DOMAIN environment variable (works for Expo Go dev)
   let host = process.env.EXPO_PUBLIC_DOMAIN || "";
   
   // Handle case where env var contains literal $REPLIT_DEV_DOMAIN (not interpolated)
-  if (host.includes("$REPLIT_DEV_DOMAIN")) {
+  if (host.includes("$REPLIT_DEV_DOMAIN") || !host) {
     // For native Expo Go, construct domain from packager hostname if available
     const packagerHostname = process.env.REACT_NATIVE_PACKAGER_HOSTNAME;
     if (packagerHostname && !packagerHostname.includes("$")) {
       host = `${packagerHostname}:5000`;
     } else {
-      // Try common Replit domain pattern
-      host = "localhost:5000"; // Fallback for local dev
+      // Final fallback
+      host = "localhost:5000";
     }
-  }
-
-  // If still no host, try to get from app config (for TestFlight production builds)
-  if (!host) {
-    try {
-      const Constants = require("expo-constants").default;
-      host = Constants?.expoConfig?.extra?.apiDomain || "";
-    } catch (e) {
-      // Silently fail if Constants not available
-    }
-  }
-
-  // Final fallback
-  if (!host) {
-    host = "localhost:5000";
   }
 
   // Check if host already has a protocol
@@ -75,8 +84,13 @@ export function getApiUrl(): string {
  * @returns {string} The clean domain (e.g., "bookflowx.cerolauto.store")
  */
 export function getBookingDomain(): string {
-  // In browser, check window.location first (this is the most reliable)
-  if (typeof window !== "undefined" && window.location) {
+  // Check if we're in a true browser environment (not React Native)
+  const isRealBrowser = typeof window !== "undefined" && 
+    window.location && 
+    typeof window.location.hostname === "string" && 
+    window.location.hostname.length > 0;
+
+  if (isRealBrowser) {
     const currentHost = window.location.hostname;
     
     // If running on Replit domain, use localhost for development
@@ -95,16 +109,33 @@ export function getBookingDomain(): string {
     }
   }
 
-  // For native Expo (TestFlight/Expo Go) - use environment variable or app config
+  // For native apps (Expo Go, TestFlight, etc.)
+  // First try expo-constants (works for TestFlight/production builds)
+  try {
+    const Constants = require("expo-constants").default;
+    // Try multiple paths for different Expo SDK versions
+    const apiDomain = 
+      Constants?.expoConfig?.extra?.apiDomain ||
+      Constants?.manifest?.extra?.apiDomain ||
+      Constants?.manifest2?.extra?.expoClient?.extra?.apiDomain ||
+      "";
+    
+    if (apiDomain && apiDomain.length > 0) {
+      return apiDomain.replace(/^https?:\/\//, "");
+    }
+  } catch (e) {
+    // expo-constants not available
+  }
+
+  // Try EXPO_PUBLIC_DOMAIN environment variable (works for Expo Go dev)
   let domain = process.env.EXPO_PUBLIC_DOMAIN || "";
 
   // Handle literal template strings
-  if (domain.includes("$REPLIT_DEV_DOMAIN") || domain === "") {
-    // Try to get from app config (for TestFlight production builds)
-    try {
-      const Constants = require("expo-constants").default;
-      domain = Constants?.expoConfig?.extra?.apiDomain || "localhost:5000";
-    } catch (e) {
+  if (domain.includes("$REPLIT_DEV_DOMAIN") || !domain) {
+    const packagerHostname = process.env.REACT_NATIVE_PACKAGER_HOSTNAME;
+    if (packagerHostname && !packagerHostname.includes("$")) {
+      domain = packagerHostname;
+    } else {
       domain = "localhost:5000";
     }
   }
