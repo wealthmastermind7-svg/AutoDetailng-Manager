@@ -60,3 +60,4 @@ ensurePreviewReachable = "/status"
 
 [userenv.shared]
 EXPO_PUBLIC_DOMAIN = "bookflowx.cerolauto.store"
+API_DOMAIN = "bookflowx.cerolauto.store"

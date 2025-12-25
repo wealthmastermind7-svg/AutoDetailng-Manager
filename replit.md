@@ -155,10 +155,22 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - [ ] Booking flow works from public link ✅
 - [ ] Embed Widget → shows code snippets (not "Failed to generate embed code") ✅
 
+### Backend Embed Widget Fix (Dec 25, 2025 - Updated) ✅
+**Issue**: Embed widget failed with "Failed to generate embed code" in TestFlight because the backend's `getEmbedOrigin()` was checking `EXPO_PUBLIC_DOMAIN` (frontend build-time variable) instead of a runtime environment variable.
+
+**Root Cause**: `EXPO_PUBLIC_DOMAIN` is set during the frontend build and not available at runtime on the server. The backend needs access to the production domain at runtime.
+
+**Solution Applied**:
+1. Updated `server/routes.ts` `getEmbedOrigin()` and `getBookingUrlForBusiness()` to check `API_DOMAIN` environment variable first (runtime setting)
+2. Set `API_DOMAIN=bookflowx.cerolauto.store` in environment variables
+3. Functions now check: `API_DOMAIN` (runtime) → `EXPO_PUBLIC_DOMAIN` (fallback) → `req.host` (development)
+
+**Why This Works**: The backend now uses a runtime environment variable (`API_DOMAIN`) that's available on production servers. This allows the backend to generate correct embed URLs regardless of how the request was made (Expo Go, TestFlight, web browser, etc.).
+
 ## Next Actions
 
 1. **Increment iOS build number** in app.json or Xcode
 2. **Rebuild and upload new TestFlight binary** (this is a fresh build with all fixes)
 3. **Delete old app** from test device
-4. **Test fresh install** - verify all persistence works
+4. **Test fresh install** - verify embed widget shows correct code snippets
 5. **Submit to App Store** for v1.0 review

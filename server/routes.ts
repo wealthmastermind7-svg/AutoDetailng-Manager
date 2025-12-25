@@ -81,7 +81,8 @@ async function loadEmbedJs() {
 }
 
 function getEmbedOrigin(req: Request): string {
-  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  // API_DOMAIN is set at runtime for production deployments
+  const domain = process.env.API_DOMAIN || process.env.EXPO_PUBLIC_DOMAIN;
   if (domain && !domain.includes('localhost')) {
     const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/:5000$/, '');
     return `https://${cleanDomain}`;
@@ -93,7 +94,8 @@ function getEmbedOrigin(req: Request): string {
 
 // Helper function to generate booking URL
 function getBookingUrlForBusiness(business: any, req: Request): string {
-  const domain = process.env.EXPO_PUBLIC_DOMAIN;
+  // API_DOMAIN is set at runtime for production deployments
+  const domain = process.env.API_DOMAIN || process.env.EXPO_PUBLIC_DOMAIN;
   if (domain && !domain.includes('localhost')) {
     const cleanDomain = domain.replace(/^https?:\/\//, '');
     return `https://${cleanDomain}/book/${business.slug}`;
