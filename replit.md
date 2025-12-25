@@ -107,6 +107,42 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - Fixed method name: storage uses `getBusiness(id)` not `getBusinessById(id)`
 - Improved error handling with fallback to slug-based lookup
 
+### TestFlight Networking Fix (Dec 25, 2025) ✅
+**Critical Issue**: TestFlight builds use pre-built static bundles that can't access shell environment variables. The app was falling back to `localhost:5000`, which doesn't exist on real devices.
+
+**Solution Applied**:
+1. Added production domain to `app.json`:
+   ```json
+   "extra": {
+     "apiDomain": "bookflowx.cerolauto.store"
+   }
+   ```
+2. Updated `client/lib/query-client.ts` `getApiUrl()` to read from expo-constants when env vars unavailable:
+   ```typescript
+   // If still no host, try to get from app config (for TestFlight production builds)
+   if (!host) {
+     try {
+       const Constants = require("expo-constants").default;
+       host = Constants?.expoConfig?.extra?.apiDomain || "";
+     } catch (e) {
+       // Silently fail if Constants not available
+     }
+   }
+   ```
+
+**API Domain Fallback Chain**:
+1. Browser `window.location` (web)
+2. Environment variables `EXPO_PUBLIC_DOMAIN` (Expo Go)
+3. `expo-constants` from app config (TestFlight/production builds)
+4. `localhost:5000` (development fallback)
+
+**Key Insight**: Expo Go uses dynamic env vars set at runtime. TestFlight needs static config in app.json because it's a compiled binary without access to shell environment.
+
+**Future Reference**: If TestFlight becomes unresponsive again, check:
+- Ensure `extra.apiDomain` in app.json is set to your production domain
+- Verify backend is accessible at that domain
+- Increment build number and rebuild
+
 ## Testing Checklist for TestFlight v1.0
 
 - [ ] Fresh TestFlight build with incremented build number
