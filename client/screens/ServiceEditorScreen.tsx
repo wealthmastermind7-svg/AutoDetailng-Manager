@@ -43,8 +43,9 @@ export default function ServiceEditorScreen() {
   });
 
   const [activeTab, setActiveTab] = useState<"details" | "links">("details");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [businessReady, setBusinessReady] = useState(false);
 
   const serviceId = (route.params as any)?.serviceId;
 
@@ -53,18 +54,26 @@ export default function ServiceEditorScreen() {
   }, []);
 
   useEffect(() => {
-    if (serviceId) {
+    if (serviceId && businessReady) {
       loadService();
+    } else if (!serviceId && businessReady) {
+      setLoading(false);
     }
-  }, [serviceId]);
+  }, [serviceId, businessReady]);
 
   const initializeBusiness = async () => {
     try {
       if (!api.getBusinessId()) {
         await api.getOrCreateBusiness();
       }
+      setBusinessReady(true);
+      if (!serviceId) {
+        setLoading(false);
+      }
     } catch (error) {
       console.error("Error initializing business:", error);
+      setLoading(false);
+      alert("Unable to connect to server. Please try again.");
     }
   };
 
@@ -83,6 +92,11 @@ export default function ServiceEditorScreen() {
   };
 
   const handleSave = async () => {
+    if (!businessReady || !api.getBusinessId()) {
+      alert("Still connecting to server. Please wait a moment and try again.");
+      return;
+    }
+
     if (!service.name?.trim()) {
       alert("Please enter a service name");
       return;
@@ -104,9 +118,6 @@ export default function ServiceEditorScreen() {
           description: service.description,
         });
       } else {
-        if (!api.getBusinessId()) {
-          throw new Error("Business ID not set");
-        }
         await api.createService({
           name: service.name,
           duration: service.duration,
