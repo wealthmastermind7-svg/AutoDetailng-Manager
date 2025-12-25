@@ -71,6 +71,7 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - **Removed**: Push notifications (added back in v1.1)
 
 ### v1.1 (Planned)
+- AI booking assistant/chatbot for customer support
 - Push notifications for booking alerts
 - Stripe payment integration
 - Email notifications
