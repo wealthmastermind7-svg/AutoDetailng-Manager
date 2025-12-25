@@ -120,28 +120,20 @@ BookFlow is built with a decoupled frontend and backend architecture.
      "apiDomain": "bookflowx.cerolauto.store"
    }
    ```
-2. Updated `client/lib/query-client.ts` `getApiUrl()` to read from expo-constants when env vars unavailable:
-   ```typescript
-   // If still no host, try to get from app config (for TestFlight production builds)
-   if (!host) {
-     try {
-       const Constants = require("expo-constants").default;
-       host = Constants?.expoConfig?.extra?.apiDomain || "";
-     } catch (e) {
-       // Silently fail if Constants not available
-     }
-   }
-   ```
+2. Updated `client/lib/query-client.ts` `getApiUrl()` and `getBookingDomain()` with improved native detection:
+   - Added proper browser detection: checks `window.location.hostname` is a non-empty string (React Native has window object but empty hostname)
+   - Prioritized expo-constants lookup BEFORE environment variables for native apps
+   - Added fallback paths for different Expo SDK versions (`expoConfig`, `manifest`, `manifest2`)
 
-**API Domain Fallback Chain**:
-1. Browser `window.location` (web)
-2. Environment variables `EXPO_PUBLIC_DOMAIN` (Expo Go)
-3. `expo-constants` from app config (TestFlight/production builds)
+**API Domain Fallback Chain** (Improved Dec 25):
+1. Browser `window.location` (web) - with proper hostname validation
+2. `expo-constants` from app config (TestFlight/production builds) - PRIORITIZED for native
+3. Environment variables `EXPO_PUBLIC_DOMAIN` (Expo Go dev)
 4. `localhost:5000` (development fallback)
 
-**Key Insight**: Expo Go uses dynamic env vars set at runtime. TestFlight needs static config in app.json because it's a compiled binary without access to shell environment.
+**Key Insight**: React Native has a `window` object but `window.location.hostname` is empty. Prioritize expo-constants for native apps since env vars aren't available in static TestFlight builds.
 
-**Future Reference**: If TestFlight becomes unresponsive again, check:
+**Future Reference**: If TestFlight API calls fail:
 - Ensure `extra.apiDomain` in app.json is set to your production domain
 - Verify backend is accessible at that domain
 - Increment build number and rebuild
@@ -161,6 +153,7 @@ BookFlow is built with a decoupled frontend and backend architecture.
 - [ ] Load demo data → dashboard updates ✅
 - [ ] Share booking QR code → QR modal displays ✅
 - [ ] Booking flow works from public link ✅
+- [ ] Embed Widget → shows code snippets (not "Failed to generate embed code") ✅
 
 ## Next Actions
 
