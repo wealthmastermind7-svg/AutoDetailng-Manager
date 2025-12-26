@@ -1,21 +1,67 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 import { getApiUrl } from "./query-client";
 
 const BUSINESS_ID_KEY = "bookflow_business_id";
+const BUSINESS_TOKEN_KEY = "bookflow_business_token";
 
 function getApiBase(): string {
   return getApiUrl();
 }
 
+let cachedToken: string | null = null;
+
+async function getSecureToken(): Promise<string | null> {
+  if (cachedToken) return cachedToken;
+  try {
+    if (Platform.OS === "web") {
+      return await AsyncStorage.getItem(BUSINESS_TOKEN_KEY);
+    }
+    const token = await SecureStore.getItemAsync(BUSINESS_TOKEN_KEY);
+    cachedToken = token;
+    return token;
+  } catch {
+    return null;
+  }
+}
+
+async function setSecureToken(token: string): Promise<void> {
+  cachedToken = token;
+  try {
+    if (Platform.OS === "web") {
+      await AsyncStorage.setItem(BUSINESS_TOKEN_KEY, token);
+    } else {
+      await SecureStore.setItemAsync(BUSINESS_TOKEN_KEY, token);
+    }
+  } catch (error) {
+    console.error("Failed to save token:", error);
+  }
+}
+
 async function makeRequest<T>(
   method: string,
   path: string,
-  data?: unknown
+  data?: unknown,
+  authenticated: boolean = true
 ): Promise<T> {
   const url = new URL(path, getApiBase());
+  const headers: Record<string, string> = {};
+  
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+  
+  if (authenticated) {
+    const token = await getSecureToken();
+    if (token) {
+      headers["x-business-token"] = token;
+    }
+  }
+  
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
   });
 
@@ -43,6 +89,7 @@ export interface Business {
   timezone?: string | null;
   notificationsEnabled?: boolean | null;
   bookingUrl?: string | null;
+  ownerToken?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }
@@ -120,9 +167,12 @@ export interface AvailabilitySchedule {
 class ApiClient {
   private businessId: string | null = null;
 
-  setBusinessId(id: string) {
+  async setBusinessId(id: string, token?: string): Promise<void> {
     this.businessId = id;
-    AsyncStorage.setItem(BUSINESS_ID_KEY, id).catch(console.error);
+    await AsyncStorage.setItem(BUSINESS_ID_KEY, id).catch(console.error);
+    if (token) {
+      await setSecureToken(token);
+    }
   }
 
   getBusinessId(): string | null {
@@ -135,6 +185,7 @@ class ApiClient {
       const saved = await AsyncStorage.getItem(BUSINESS_ID_KEY);
       if (saved) {
         this.businessId = saved;
+        await getSecureToken();
       }
       return saved;
     } catch {
@@ -154,7 +205,7 @@ class ApiClient {
       const res = await fetch(`${getApiBase()}api/businesses/demo-business`);
       if (res.ok) {
         const business = await res.json();
-        this.setBusinessId(business.id);
+        await this.setBusinessId(business.id, business.ownerToken);
         return business;
       }
     } catch (error) {
@@ -168,15 +219,15 @@ class ApiClient {
         description: "Demo business for testing",
         phone: "+1 (555) 123-4567",
         email: "demo@bookflow.app",
-      });
-      this.setBusinessId(newBusiness.id);
+      }, false);
+      await this.setBusinessId(newBusiness.id, newBusiness.ownerToken);
       return newBusiness;
     } catch (error) {
       try {
         const res = await fetch(`${getApiBase()}api/businesses/demo-business`);
         if (res.ok) {
           const business = await res.json();
-          this.setBusinessId(business.id);
+          await this.setBusinessId(business.id, business.ownerToken);
           return business;
         }
       } catch {}
@@ -189,7 +240,11 @@ class ApiClient {
     try {
       const res = await fetch(`${getApiBase()}api/businesses/${this.businessId}`);
       if (!res.ok) return null;
-      return res.json();
+      const business = await res.json();
+      if (business.ownerToken && !cachedToken) {
+        await setSecureToken(business.ownerToken);
+      }
+      return business;
     } catch {
       return null;
     }
