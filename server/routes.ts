@@ -16,6 +16,13 @@ import fs from "fs";
 import QRCode from "qrcode";
 import { sendBookingConfirmation } from "./email";
 import { sendBookingNotification, sendTestNotification } from "./notifications";
+import { 
+  verifyBusinessOwnership, 
+  verifyServiceOwnership, 
+  verifyBookingOwnership,
+  verifyCustomerOwnership,
+  type AuthenticatedRequest 
+} from "./middleware/auth";
 
 // ES module equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -159,8 +166,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update business
-  app.patch("/api/businesses/:id", async (req: Request, res: Response) => {
+  // Update business (PROTECTED)
+  app.patch("/api/businesses/:id", verifyBusinessOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const updates = insertBusinessSchema.partial().parse(req.body);
       const business = await storage.updateBusiness(req.params.id, updates);
@@ -205,8 +212,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create service
-  app.post("/api/businesses/:businessId/services", async (req: Request, res: Response) => {
+  // Create service (PROTECTED)
+  app.post("/api/businesses/:businessId/services", verifyBusinessOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const data = insertServiceSchema.parse({
         ...req.body,
@@ -223,8 +230,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update service
-  app.patch("/api/services/:id", async (req: Request, res: Response) => {
+  // Update service (PROTECTED)
+  app.patch("/api/services/:id", verifyServiceOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const updates = insertServiceSchema.partial().parse(req.body);
       const service = await storage.updateService(req.params.id, updates);
@@ -241,8 +248,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete service
-  app.delete("/api/services/:id", async (req: Request, res: Response) => {
+  // Delete service (PROTECTED)
+  app.delete("/api/services/:id", verifyServiceOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       await storage.deleteService(req.params.id);
       res.status(204).send();
@@ -303,8 +310,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update customer
-  app.patch("/api/customers/:id", async (req: Request, res: Response) => {
+  // Update customer (PROTECTED)
+  app.patch("/api/customers/:id", verifyCustomerOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const updates = insertCustomerSchema.partial().parse(req.body);
       const customer = await storage.updateCustomer(req.params.id, updates);
@@ -404,8 +411,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update booking
-  app.patch("/api/bookings/:id", async (req: Request, res: Response) => {
+  // Update booking (PROTECTED)
+  app.patch("/api/bookings/:id", verifyBookingOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const updates = insertBookingSchema.partial().parse(req.body);
       const booking = await storage.updateBooking(req.params.id, updates);
@@ -435,8 +442,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Set/update availability for a specific day
-  app.put("/api/businesses/:businessId/availability/:dayOfWeek", async (req: Request, res: Response) => {
+  // Set/update availability for a specific day (PROTECTED)
+  app.put("/api/businesses/:businessId/availability/:dayOfWeek", verifyBusinessOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { startTime, endTime, isActive } = req.body;
       const dayOfWeek = parseInt(req.params.dayOfWeek);
@@ -460,8 +467,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk update availability (set all days at once)
-  app.put("/api/businesses/:businessId/availability", async (req: Request, res: Response) => {
+  // Bulk update availability (set all days at once) (PROTECTED)
+  app.put("/api/businesses/:businessId/availability", verifyBusinessOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { schedules } = req.body;
       
@@ -538,8 +545,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // === DEMO DATA ===
   
-  // Initialize demo data for a business
-  app.post("/api/businesses/:businessId/demo-data", async (req: Request, res: Response) => {
+  // Initialize demo data for a business (PROTECTED)
+  app.post("/api/businesses/:businessId/demo-data", verifyBusinessOwnership, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { businessType = "salon" } = req.body;
       await storage.initializeDemoData(req.params.businessId, businessType);

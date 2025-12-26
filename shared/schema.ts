@@ -28,6 +28,7 @@ export const businesses = pgTable("businesses", {
   address: text("address"),
   timezone: text("timezone").default("America/New_York"),
   notificationsEnabled: boolean("notifications_enabled").default(true),
+  ownerToken: text("owner_token").default(sql`gen_random_uuid()`),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
