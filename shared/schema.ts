@@ -29,6 +29,11 @@ export const businesses = pgTable("businesses", {
   timezone: text("timezone").default("America/New_York"),
   notificationsEnabled: boolean("notifications_enabled").default(true),
   ownerToken: text("owner_token").default(sql`gen_random_uuid()`),
+  isPremium: boolean("is_premium").default(false),
+  premiumExpiresAt: timestamp("premium_expires_at"),
+  weeklyShareCount: integer("weekly_share_count").default(0),
+  weeklyQrCount: integer("weekly_qr_count").default(0),
+  weeklyResetAt: timestamp("weekly_reset_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

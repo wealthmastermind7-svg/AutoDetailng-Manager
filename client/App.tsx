@@ -12,6 +12,21 @@ import { api } from "@/lib/api";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { PremiumProvider } from "@/contexts/PremiumContext";
+import { PaywallModal } from "@/components/PaywallModal";
+import { usePremium } from "@/contexts/PremiumContext";
+
+function PaywallContainer() {
+  const { paywallVisible, paywallType, hidePaywall, handleUpgrade } = usePremium();
+  return (
+    <PaywallModal
+      visible={paywallVisible}
+      type={paywallType}
+      onClose={hidePaywall}
+      onUpgrade={handleUpgrade}
+    />
+  );
+}
 
 export default function App() {
   useEffect(() => {
@@ -35,9 +50,12 @@ export default function App() {
         <SafeAreaProvider>
           <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
-              <NavigationContainer>
-                <RootStackNavigator />
-              </NavigationContainer>
+              <PremiumProvider>
+                <NavigationContainer>
+                  <RootStackNavigator />
+                </NavigationContainer>
+                <PaywallContainer />
+              </PremiumProvider>
               <StatusBar style="auto" />
             </KeyboardProvider>
           </GestureHandlerRootView>
