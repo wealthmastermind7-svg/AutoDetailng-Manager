@@ -12,6 +12,7 @@ import { CircularMeter } from "@/components/CircularMeter";
 import { BookingCard } from "@/components/BookingCard";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import { PremiumBanner } from "@/components/PremiumBanner";
 
 export default function DashboardScreen() {
   const headerHeight = useHeaderHeight();
@@ -131,6 +132,8 @@ export default function DashboardScreen() {
       case 1:
         return <LineGraph data={graphData} title="Revenue This Week" />;
       case 2:
+        return <PremiumBanner />;
+      case 3:
         return (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -183,7 +186,7 @@ export default function DashboardScreen() {
   return (
     <ThemedView style={styles.container}>
       <FlatList
-        data={[0, 1, 2]}
+        data={[0, 1, 2, 3]}
         renderItem={renderItem}
         keyExtractor={(item) => item.toString()}
         contentContainerStyle={{
