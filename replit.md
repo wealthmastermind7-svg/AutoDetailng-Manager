@@ -167,10 +167,56 @@ BookFlow is built with a decoupled frontend and backend architecture.
 
 **Why This Works**: The backend now uses a runtime environment variable (`API_DOMAIN`) that's available on production servers. This allows the backend to generate correct embed URLs regardless of how the request was made (Expo Go, TestFlight, web browser, etc.).
 
+## Multi-Tenant Security Implementation (Dec 26, 2025) ✅
+
+### Authentication System
+BookFlow uses a token-based ownership verification system to protect admin routes while keeping public booking flows open.
+
+**Architecture**:
+- Each business has a unique `ownerToken` (UUID) stored in the database
+- Token is generated automatically when a business is created
+- Client stores token securely using `expo-secure-store`
+- All authenticated requests include `x-business-token` header
+
+**Protected Routes** (require valid token):
+- PATCH `/api/businesses/:id` - Update business info
+- POST/PATCH/DELETE `/api/services/*` - Service management
+- POST/PATCH `/api/customers/*` - Customer management
+- POST/PATCH `/api/bookings/*` - Booking management
+- POST/PUT `/api/availability/*` - Availability management
+- POST `/api/businesses/:id/demo-data` - Load demo data
+
+**Public Routes** (no auth required):
+- GET `/api/businesses/:slug` - Public business info
+- GET `/api/services` - Public service list
+- GET `/api/availability` - Public availability
+- POST `/api/bookings` - Create booking (public checkout)
+- All `/book/:slug/*` routes - Public booking flow
+
+**Security Pattern** (Token-First Verification):
+```typescript
+// 1. First verify the token exists and get its business
+const tokenBusiness = await storage.getBusinessByToken(ownerToken);
+if (!tokenBusiness) return 403;
+
+// 2. Then verify the resource belongs to the token's business
+if (resource.businessId !== tokenBusiness.id) return 403;
+```
+
+This pattern prevents cross-tenant access by:
+1. Validating the token is real before proceeding
+2. Ensuring the token's business matches the requested resource
+
+**Files**:
+- `server/middleware/auth.ts` - All verification middleware
+- `server/storage.ts` - `getBusinessByToken()` method
+- `client/lib/api.ts` - Token storage and header management
+- `shared/schema.ts` - `ownerToken` column on businesses table
+
 ## Next Actions
 
 1. **Increment iOS build number** in app.json or Xcode
-2. **Rebuild and upload new TestFlight binary** (this is a fresh build with all fixes)
+2. **Rebuild and upload new TestFlight binary** (this is a fresh build with all security fixes)
 3. **Delete old app** from test device
-4. **Test fresh install** - verify embed widget shows correct code snippets
+4. **Test fresh install** - verify all admin actions require authentication
 5. **Submit to App Store** for v1.0 review
