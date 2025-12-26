@@ -6,6 +6,7 @@ import {
   Modal,
   Pressable,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
@@ -18,6 +19,7 @@ import Animated, {
 import { useTheme } from "@/hooks/useTheme";
 import { Colors, Spacing, BorderRadius, Typography } from "@/constants/theme";
 import { Feather } from "@expo/vector-icons";
+import { PurchasesPackage, PurchasesOffering } from "@/lib/revenuecat";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -32,7 +34,9 @@ interface PaywallModalProps {
   visible: boolean;
   type: PaywallType;
   onClose: () => void;
-  onUpgrade: () => void;
+  onUpgrade: (plan: "monthly" | "yearly") => void;
+  isLoading?: boolean;
+  offerings: PurchasesOffering | null;
   remainingCount?: number;
 }
 
@@ -92,6 +96,8 @@ export function PaywallModal({
   type,
   onClose,
   onUpgrade,
+  isLoading = false,
+  offerings,
 }: PaywallModalProps) {
   const { theme: colors, isDark } = useTheme();
   const content = PAYWALL_CONTENT[type];
@@ -99,7 +105,7 @@ export function PaywallModal({
 
   const handleUpgrade = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    onUpgrade();
+    onUpgrade(selectedPlan);
   };
 
   const handleClose = async () => {
@@ -220,12 +226,17 @@ export function PaywallModal({
               </View>
 
               <Pressable
-                style={[styles.ctaButton, { backgroundColor: "#00CED1" }]}
+                style={[styles.ctaButton, { backgroundColor: "#00CED1", opacity: isLoading ? 0.7 : 1 }]}
                 onPress={handleUpgrade}
+                disabled={isLoading}
               >
-                <Text style={[styles.ctaText, { color: "#000000" }]}>
-                  {content.ctaText} - {selectedPlan === "yearly" ? "$269/year" : "$29.99/mo"}
-                </Text>
+                {isLoading ? (
+                  <ActivityIndicator color="#000000" size="small" />
+                ) : (
+                  <Text style={[styles.ctaText, { color: "#000000" }]}>
+                    {content.ctaText} - {selectedPlan === "yearly" ? "$269/year" : "$29.99/mo"}
+                  </Text>
+                )}
               </Pressable>
 
               <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>

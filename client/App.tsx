@@ -17,13 +17,15 @@ import { PaywallModal } from "@/components/PaywallModal";
 import { usePremium } from "@/contexts/PremiumContext";
 
 function PaywallContainer() {
-  const { paywallVisible, paywallType, hidePaywall, handleUpgrade } = usePremium();
+  const { paywallVisible, paywallType, hidePaywall, handleUpgrade, isLoading, offerings } = usePremium();
   return (
     <PaywallModal
       visible={paywallVisible}
       type={paywallType}
       onClose={hidePaywall}
       onUpgrade={handleUpgrade}
+      isLoading={isLoading}
+      offerings={offerings}
     />
   );
 }

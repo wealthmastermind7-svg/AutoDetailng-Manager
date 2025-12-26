@@ -39,7 +39,7 @@ interface PremiumContextType {
   checkAndIncrementShare: () => boolean;
   checkAndIncrementQr: () => boolean;
   checkEmbedAccess: () => boolean;
-  handleUpgrade: () => void;
+  handleUpgrade: (plan: "monthly" | "yearly") => Promise<void>;
   purchaseProduct: (pkg: PurchasesPackage) => Promise<boolean>;
   restoreSubscription: () => Promise<boolean>;
   updatePremiumState: (state: Partial<PremiumState>) => void;
@@ -196,25 +196,48 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
     }
   }, []);
 
-  const handleUpgrade = useCallback(() => {
-    if (offerings && offerings.availablePackages.length > 0) {
-      hidePaywall();
-    } else if (Platform.OS === "web") {
-      hidePaywall();
+  const handleUpgrade = useCallback(async (plan: "monthly" | "yearly") => {
+    if (Platform.OS === "web") {
       Alert.alert(
         "Mobile Only",
         "Subscriptions are available in the iOS and Android app.",
         [{ text: "OK", style: "default" }]
       );
-    } else {
-      hidePaywall();
+      return;
+    }
+
+    if (!offerings || offerings.availablePackages.length === 0) {
       Alert.alert(
-        "Coming Soon",
-        "In-app purchases will be available shortly.",
+        "Products Not Available",
+        "Unable to load subscription options. Please try again.",
         [{ text: "OK", style: "default" }]
       );
+      return;
     }
-  }, [hidePaywall, offerings]);
+
+    // Find the package matching the selected plan
+    const selectedPackage = offerings.availablePackages.find((pkg) => {
+      const identifier = pkg.identifier.toLowerCase();
+      if (plan === "yearly") {
+        return identifier.includes("annual") || identifier.includes("yearly") || identifier.includes("year");
+      } else {
+        return identifier.includes("monthly") || identifier.includes("month");
+      }
+    });
+
+    if (!selectedPackage) {
+      Alert.alert(
+        "Plan Not Available",
+        `The ${plan} plan is not available. Please try again.`,
+        [{ text: "OK", style: "default" }]
+      );
+      console.error(`Could not find ${plan} package in offerings:`, offerings.availablePackages.map((p) => p.identifier));
+      return;
+    }
+
+    // Trigger the actual purchase
+    await purchaseProduct(selectedPackage);
+  }, [offerings, purchaseProduct]);
 
   const updatePremiumState = useCallback((state: Partial<PremiumState>) => {
     if (state.isPremium !== undefined) setIsPremium(state.isPremium);
