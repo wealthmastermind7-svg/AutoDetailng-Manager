@@ -33,6 +33,7 @@ export interface IStorage {
   // Businesses
   getBusiness(id: string): Promise<Business | undefined>;
   getBusinessBySlug(slug: string): Promise<Business | undefined>;
+  getBusinessByToken(ownerToken: string): Promise<Business | undefined>;
   createBusiness(business: InsertBusiness): Promise<Business>;
   updateBusiness(id: string, updates: Partial<InsertBusiness>): Promise<Business | undefined>;
   
@@ -99,6 +100,11 @@ export class DatabaseStorage implements IStorage {
 
   async getBusinessBySlug(slug: string): Promise<Business | undefined> {
     const [business] = await db.select().from(businesses).where(eq(businesses.slug, slug));
+    return business || undefined;
+  }
+
+  async getBusinessByToken(ownerToken: string): Promise<Business | undefined> {
+    const [business] = await db.select().from(businesses).where(eq(businesses.ownerToken, ownerToken));
     return business || undefined;
   }
 

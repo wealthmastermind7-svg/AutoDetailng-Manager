@@ -27,25 +27,23 @@ export async function verifyBusinessOwnership(
       return res.status(401).json({ error: "Authentication required" });
     }
 
-    const business = await storage.getBusiness(businessId);
-    
-    if (!business) {
-      return res.status(404).json({ error: "Business not found" });
-    }
-
-    if (!business.ownerToken) {
-      return res.status(403).json({ error: "Business not configured for authenticated access" });
-    }
-
-    if (business.ownerToken !== ownerToken) {
+    // First, verify the token exists and get the business it belongs to
+    const tokenBusiness = await storage.getBusinessByToken(ownerToken);
+    if (!tokenBusiness) {
       return res.status(403).json({ error: "Invalid authentication token" });
     }
 
+    // Then, verify the token's business matches the requested business
+    // This prevents cross-tenant access even if someone has a valid token for a different business
+    if (tokenBusiness.id !== businessId) {
+      return res.status(403).json({ error: "Token does not belong to this business" });
+    }
+
     req.business = {
-      id: business.id,
-      ownerToken: business.ownerToken,
-      name: business.name,
-      slug: business.slug,
+      id: tokenBusiness.id,
+      ownerToken: tokenBusiness.ownerToken!,
+      name: tokenBusiness.name,
+      slug: tokenBusiness.slug,
     };
 
     next();
@@ -72,25 +70,27 @@ export async function verifyServiceOwnership(
       return res.status(401).json({ error: "Authentication required" });
     }
 
+    // First, verify the token exists and get the business it belongs to
+    const tokenBusiness = await storage.getBusinessByToken(ownerToken);
+    if (!tokenBusiness) {
+      return res.status(403).json({ error: "Invalid authentication token" });
+    }
+
+    // Then, verify the service exists and belongs to the token's business
     const service = await storage.getService(serviceId);
     if (!service) {
       return res.status(404).json({ error: "Service not found" });
     }
 
-    const business = await storage.getBusiness(service.businessId);
-    if (!business) {
-      return res.status(404).json({ error: "Business not found" });
-    }
-
-    if (!business.ownerToken || business.ownerToken !== ownerToken) {
-      return res.status(403).json({ error: "Invalid authentication token" });
+    if (service.businessId !== tokenBusiness.id) {
+      return res.status(403).json({ error: "Token does not own this service" });
     }
 
     req.business = {
-      id: business.id,
-      ownerToken: business.ownerToken,
-      name: business.name,
-      slug: business.slug,
+      id: tokenBusiness.id,
+      ownerToken: tokenBusiness.ownerToken!,
+      name: tokenBusiness.name,
+      slug: tokenBusiness.slug,
     };
 
     next();
@@ -117,25 +117,27 @@ export async function verifyBookingOwnership(
       return res.status(401).json({ error: "Authentication required" });
     }
 
+    // First, verify the token exists and get the business it belongs to
+    const tokenBusiness = await storage.getBusinessByToken(ownerToken);
+    if (!tokenBusiness) {
+      return res.status(403).json({ error: "Invalid authentication token" });
+    }
+
+    // Then, verify the booking exists and belongs to the token's business
     const booking = await storage.getBooking(bookingId);
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
 
-    const business = await storage.getBusiness(booking.businessId);
-    if (!business) {
-      return res.status(404).json({ error: "Business not found" });
-    }
-
-    if (!business.ownerToken || business.ownerToken !== ownerToken) {
-      return res.status(403).json({ error: "Invalid authentication token" });
+    if (booking.businessId !== tokenBusiness.id) {
+      return res.status(403).json({ error: "Token does not own this booking" });
     }
 
     req.business = {
-      id: business.id,
-      ownerToken: business.ownerToken,
-      name: business.name,
-      slug: business.slug,
+      id: tokenBusiness.id,
+      ownerToken: tokenBusiness.ownerToken!,
+      name: tokenBusiness.name,
+      slug: tokenBusiness.slug,
     };
 
     next();
@@ -162,25 +164,27 @@ export async function verifyCustomerOwnership(
       return res.status(401).json({ error: "Authentication required" });
     }
 
+    // First, verify the token exists and get the business it belongs to
+    const tokenBusiness = await storage.getBusinessByToken(ownerToken);
+    if (!tokenBusiness) {
+      return res.status(403).json({ error: "Invalid authentication token" });
+    }
+
+    // Then, verify the customer exists and belongs to the token's business
     const customer = await storage.getCustomer(customerId);
     if (!customer) {
       return res.status(404).json({ error: "Customer not found" });
     }
 
-    const business = await storage.getBusiness(customer.businessId);
-    if (!business) {
-      return res.status(404).json({ error: "Business not found" });
-    }
-
-    if (!business.ownerToken || business.ownerToken !== ownerToken) {
-      return res.status(403).json({ error: "Invalid authentication token" });
+    if (customer.businessId !== tokenBusiness.id) {
+      return res.status(403).json({ error: "Token does not own this customer" });
     }
 
     req.business = {
-      id: business.id,
-      ownerToken: business.ownerToken,
-      name: business.name,
-      slug: business.slug,
+      id: tokenBusiness.id,
+      ownerToken: tokenBusiness.ownerToken!,
+      name: tokenBusiness.name,
+      slug: tokenBusiness.slug,
     };
 
     next();
