@@ -7,10 +7,11 @@ import Purchases, {
 } from "react-native-purchases";
 
 const ENTITLEMENT_ID = "BookFlowX Pro";
+const IOS_REVENUECAT_API_KEY = "appl_LqjVbACDADybafbTUXlheXxxhkF";
 
 function getApiKey(): string | null {
   if (Platform.OS === "ios") {
-    return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS || null;
+    return IOS_REVENUECAT_API_KEY;
   } else if (Platform.OS === "android") {
     return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID || null;
   }
@@ -39,6 +40,9 @@ export async function initializeRevenueCat(): Promise<boolean> {
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
     
     console.log(`RevenueCat: Configuring with ${Platform.OS} API key`);
+    if (Platform.OS === "ios") {
+      console.log(`RevenueCat: Using hardcoded iOS key: ${IOS_REVENUECAT_API_KEY}`);
+    }
     
     await Purchases.configure({ apiKey });
     isInitialized = true;
