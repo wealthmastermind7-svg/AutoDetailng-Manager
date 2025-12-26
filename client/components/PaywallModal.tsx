@@ -95,6 +95,7 @@ export function PaywallModal({
 }: PaywallModalProps) {
   const { theme: colors, isDark } = useTheme();
   const content = PAYWALL_CONTENT[type];
+  const [selectedPlan, setSelectedPlan] = React.useState<"monthly" | "yearly">("yearly");
 
   const handleUpgrade = async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -177,13 +178,45 @@ export function PaywallModal({
                 {content.description}
               </Text>
 
-              <View style={styles.priceContainer}>
-                <Text style={[styles.priceLabel, { color: colors.textSecondary }]}>
-                  {isHardLimit ? "Upgrade to remove limits" : "Invest in your business for"}
-                </Text>
-                <Text style={[styles.price, { color: colors.text }]}>
-                  $9.99<Text style={styles.priceUnit}>/month</Text>
-                </Text>
+              <View style={styles.planSelector}>
+                <Pressable
+                  style={[
+                    styles.planOption,
+                    selectedPlan === "yearly" && styles.planOptionSelected,
+                    selectedPlan === "yearly" && { borderColor: "#00CED1" },
+                    { backgroundColor: colors.backgroundSecondary },
+                  ]}
+                  onPress={() => setSelectedPlan("yearly")}
+                >
+                  <View style={styles.planBadge}>
+                    <Text style={styles.planBadgeText}>BEST VALUE</Text>
+                  </View>
+                  <Text style={[styles.planName, { color: colors.text }]}>Yearly</Text>
+                  <Text style={[styles.planPrice, { color: colors.text }]}>
+                    $269<Text style={styles.planPriceUnit}>/year</Text>
+                  </Text>
+                  <Text style={[styles.planSavings, { color: "#00CED1" }]}>
+                    Save $180/year
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.planOption,
+                    selectedPlan === "monthly" && styles.planOptionSelected,
+                    selectedPlan === "monthly" && { borderColor: "#00CED1" },
+                    { backgroundColor: colors.backgroundSecondary },
+                  ]}
+                  onPress={() => setSelectedPlan("monthly")}
+                >
+                  <Text style={[styles.planName, { color: colors.text }]}>Monthly</Text>
+                  <Text style={[styles.planPrice, { color: colors.text }]}>
+                    $9.99<Text style={styles.planPriceUnit}>/month</Text>
+                  </Text>
+                  <Text style={[styles.planSubtext, { color: colors.textSecondary }]}>
+                    Cancel anytime
+                  </Text>
+                </Pressable>
               </View>
 
               <Pressable
@@ -191,7 +224,7 @@ export function PaywallModal({
                 onPress={handleUpgrade}
               >
                 <Text style={[styles.ctaText, { color: "#000000" }]}>
-                  {content.ctaText}
+                  {content.ctaText} - {selectedPlan === "yearly" ? "$269/year" : "$9.99/mo"}
                 </Text>
               </Pressable>
 
@@ -275,20 +308,59 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: Spacing["2xl"],
   },
-  priceContainer: {
+  planSelector: {
+    flexDirection: "row",
+    gap: Spacing.md,
     marginBottom: Spacing.xl,
   },
-  priceLabel: {
-    fontSize: 14,
-    marginBottom: Spacing.xs,
+  planOption: {
+    flex: 1,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 2,
+    borderColor: "transparent",
+    alignItems: "center",
+    position: "relative",
   },
-  price: {
-    fontSize: 28,
+  planOptionSelected: {
+    borderWidth: 2,
+  },
+  planBadge: {
+    position: "absolute",
+    top: -10,
+    backgroundColor: "#00CED1",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  planBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#000000",
+    letterSpacing: 0.5,
+  },
+  planName: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: Spacing.xs,
+    marginTop: Spacing.xs,
+  },
+  planPrice: {
+    fontSize: 20,
     fontWeight: "700",
   },
-  priceUnit: {
-    fontSize: 16,
+  planPriceUnit: {
+    fontSize: 12,
     fontWeight: "400",
+  },
+  planSavings: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: Spacing.xs,
+  },
+  planSubtext: {
+    fontSize: 12,
+    marginTop: Spacing.xs,
   },
   ctaButton: {
     height: Spacing.buttonHeight,
