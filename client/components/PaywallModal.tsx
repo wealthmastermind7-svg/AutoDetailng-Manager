@@ -211,7 +211,7 @@ export function PaywallModal({
                 >
                   <Text style={[styles.planName, { color: colors.text }]}>Monthly</Text>
                   <Text style={[styles.planPrice, { color: colors.text }]}>
-                    $9.99<Text style={styles.planPriceUnit}>/month</Text>
+                    $29.99<Text style={styles.planPriceUnit}>/month</Text>
                   </Text>
                   <Text style={[styles.planSubtext, { color: colors.textSecondary }]}>
                     Cancel anytime
@@ -224,7 +224,7 @@ export function PaywallModal({
                 onPress={handleUpgrade}
               >
                 <Text style={[styles.ctaText, { color: "#000000" }]}>
-                  {content.ctaText} - {selectedPlan === "yearly" ? "$269/year" : "$9.99/mo"}
+                  {content.ctaText} - {selectedPlan === "yearly" ? "$269/year" : "$29.99/mo"}
                 </Text>
               </Pressable>
 
