@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
-import { Alert, Linking, Platform } from "react-native";
+import { Alert, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { PaywallType } from "@/components/PaywallModal";
+import {
+  initializeRevenueCat,
+  checkPremiumStatus,
+  getOfferings,
+  purchasePackage,
+  restorePurchases,
+  PurchasesPackage,
+  PurchasesOffering,
+} from "@/lib/revenuecat";
 
 const WEEKLY_LIMIT = 5;
 
@@ -23,12 +32,16 @@ interface PremiumContextType {
   remainingQrCodes: number;
   paywallVisible: boolean;
   paywallType: PaywallType;
+  isLoading: boolean;
+  offerings: PurchasesOffering | null;
   showPaywall: (type: PaywallType) => void;
   hidePaywall: () => void;
   checkAndIncrementShare: () => boolean;
   checkAndIncrementQr: () => boolean;
   checkEmbedAccess: () => boolean;
   handleUpgrade: () => void;
+  purchaseProduct: (pkg: PurchasesPackage) => Promise<boolean>;
+  restoreSubscription: () => Promise<boolean>;
   updatePremiumState: (state: Partial<PremiumState>) => void;
   refreshUsage: () => void;
 }
@@ -48,6 +61,22 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
   
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallType, setPaywallType] = useState<PaywallType>("soft_upsell");
+  const [isLoading, setIsLoading] = useState(false);
+  const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
+
+  useEffect(() => {
+    async function initPurchases() {
+      const initialized = await initializeRevenueCat();
+      if (initialized) {
+        const premium = await checkPremiumStatus();
+        setIsPremium(premium);
+        
+        const currentOfferings = await getOfferings();
+        setOfferings(currentOfferings);
+      }
+    }
+    initPurchases();
+  }, []);
 
   useEffect(() => {
     if (!weeklyResetAt) {
@@ -112,17 +141,80 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
     return false;
   }, [isPremium, showPaywall]);
 
-  const handleUpgrade = useCallback(() => {
-    hidePaywall();
-    
-    Alert.alert(
-      "Premium Coming Soon",
-      "In-app purchases will be available in the next update. For now, enjoy BookFlow's core features!",
-      [
-        { text: "OK", style: "default" }
-      ]
-    );
+  const purchaseProduct = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
+    if (Platform.OS === "web") {
+      Alert.alert("Not Available", "Subscriptions are only available in the mobile app.");
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await purchasePackage(pkg);
+      if (result.success && result.isPremium) {
+        setIsPremium(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        hidePaywall();
+        Alert.alert("Welcome to Premium!", "You now have unlimited access to all BookFlow features.");
+        return true;
+      } else if (result.error === "cancelled") {
+        return false;
+      } else {
+        Alert.alert("Purchase Failed", result.error || "Please try again.");
+        return false;
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong. Please try again.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   }, [hidePaywall]);
+
+  const restoreSubscription = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS === "web") {
+      Alert.alert("Not Available", "Restore is only available in the mobile app.");
+      return false;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = await restorePurchases();
+      if (result.success && result.isPremium) {
+        setIsPremium(true);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        Alert.alert("Restored!", "Your premium subscription has been restored.");
+        return true;
+      } else {
+        Alert.alert("No Subscription Found", "We couldn't find an active subscription to restore.");
+        return false;
+      }
+    } catch (error) {
+      Alert.alert("Error", "Something went wrong. Please try again.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleUpgrade = useCallback(() => {
+    if (offerings && offerings.availablePackages.length > 0) {
+      hidePaywall();
+    } else if (Platform.OS === "web") {
+      hidePaywall();
+      Alert.alert(
+        "Mobile Only",
+        "Subscriptions are available in the iOS and Android app.",
+        [{ text: "OK", style: "default" }]
+      );
+    } else {
+      hidePaywall();
+      Alert.alert(
+        "Coming Soon",
+        "In-app purchases will be available shortly.",
+        [{ text: "OK", style: "default" }]
+      );
+    }
+  }, [hidePaywall, offerings]);
 
   const updatePremiumState = useCallback((state: Partial<PremiumState>) => {
     if (state.isPremium !== undefined) setIsPremium(state.isPremium);
@@ -158,12 +250,16 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
         remainingQrCodes,
         paywallVisible,
         paywallType,
+        isLoading,
+        offerings,
         showPaywall,
         hidePaywall,
         checkAndIncrementShare,
         checkAndIncrementQr,
         checkEmbedAccess,
         handleUpgrade,
+        purchaseProduct,
+        restoreSubscription,
         updatePremiumState,
         refreshUsage,
       }}
