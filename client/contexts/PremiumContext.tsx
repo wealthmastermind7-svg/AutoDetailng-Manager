@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { Alert, Linking, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
 import { PaywallType } from "@/components/PaywallModal";
@@ -48,6 +48,22 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
   
   const [paywallVisible, setPaywallVisible] = useState(false);
   const [paywallType, setPaywallType] = useState<PaywallType>("soft_upsell");
+
+  useEffect(() => {
+    if (!weeklyResetAt) {
+      setWeeklyResetAt(new Date().toISOString());
+    } else {
+      const resetDate = new Date(weeklyResetAt);
+      const now = new Date();
+      const weekInMs = 7 * 24 * 60 * 60 * 1000;
+      
+      if (now.getTime() - resetDate.getTime() >= weekInMs) {
+        setWeeklyShareCount(0);
+        setWeeklyQrCount(0);
+        setWeeklyResetAt(now.toISOString());
+      }
+    }
+  }, []);
 
   const canShare = isPremium || weeklyShareCount < WEEKLY_LIMIT;
   const canGenerateQr = isPremium || weeklyQrCount < WEEKLY_LIMIT;
