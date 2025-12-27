@@ -46,10 +46,10 @@ export interface Booking {
 }
 
 const STORAGE_KEYS = {
-  SERVICES: "@bookflow_services",
-  BOOKINGS: "@bookflow_bookings",
-  CUSTOMERS: "@bookflow_customers",
-  AVAILABILITY: "@bookflow_availability",
+  SERVICES: "@autodetailingmanager_services",
+  BOOKINGS: "@autodetailingmanager_bookings",
+  CUSTOMERS: "@autodetailingmanager_customers",
+  AVAILABILITY: "@autodetailingmanager_availability",
 };
 
 export const StorageService = {

@@ -6,7 +6,7 @@ import Purchases, {
   PurchasesOffering,
 } from "react-native-purchases";
 
-const ENTITLEMENT_ID = "BookFlowX Pro";
+const ENTITLEMENT_ID = "AutoDetailingManager Pro";
 const IOS_REVENUECAT_API_KEY = "appl_LqjVbACDADybafbTUXlheXxxhkF";
 
 function getApiKey(): string | null {

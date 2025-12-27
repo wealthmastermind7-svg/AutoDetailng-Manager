@@ -3,8 +3,8 @@ import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 import { getApiUrl } from "./query-client";
 
-const BUSINESS_ID_KEY = "bookflow_business_id";
-const BUSINESS_TOKEN_KEY = "bookflow_business_token";
+const BUSINESS_ID_KEY = "autodetailingmanager_business_id";
+const BUSINESS_TOKEN_KEY = "autodetailingmanager_business_token";
 
 function getApiBase(): string {
   return getApiUrl();

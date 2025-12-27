@@ -154,7 +154,7 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
         setIsPremium(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         hidePaywall();
-        Alert.alert("Welcome to Premium!", "You now have unlimited access to all BookFlow features.");
+        Alert.alert("Welcome to Premium!", "You now have unlimited access to all AutoDetailing Manager features.");
         return true;
       } else if (result.error === "cancelled") {
         return false;
