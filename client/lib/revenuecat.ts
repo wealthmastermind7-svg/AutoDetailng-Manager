@@ -10,8 +10,11 @@ import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 const ENTITLEMENT_ID = "AutoDetailng Manager Pro";
 
 function getApiKey(): string | null {
-  if (Platform.OS === "ios" || Platform.OS === "android") {
-    return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || null;
+  if (Platform.OS === "ios") {
+    return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS || process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || null;
+  }
+  if (Platform.OS === "android") {
+    return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID || process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || null;
   }
   return null;
 }
