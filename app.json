@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "BookFlow",
-    "slug": "bookflow",
+    "name": "AutoDetailing Manager",
+    "slug": "autodetailing-manager",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bookflow",
+    "scheme": "autodetailingmanager",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,

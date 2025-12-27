@@ -1,7 +1,7 @@
-# BookFlow - Multi-Tenancy Booking Platform MVP
+# AutoDetailing Manager - Multi-Tenancy Booking Platform MVP
 
 ## Overview
-BookFlow is a scalable multi-tenant booking platform for businesses, offering a public booking flow for customers and a comprehensive admin dashboard for owners. It emphasizes a premium user experience with sophisticated design, oversized typography, and cinematic animations. The platform aims to be an app-store-ready solution for appointment and service management across various business verticals.
+AutoDetailing Manager is a scalable multi-tenant booking platform for auto detailing businesses, offering a public booking flow for customers and a comprehensive admin dashboard for owners. It emphasizes a premium user experience with sophisticated design, oversized typography, and cinematic animations. The platform aims to be an app-store-ready solution for appointment and service management for auto detailing businesses.
 
 ## User Preferences
 - **Communication Style**: I prefer clear, concise, and direct communication.
@@ -15,7 +15,7 @@ BookFlow is a scalable multi-tenant booking platform for businesses, offering a 
     - When updating dependencies, prioritize stability and production readiness.
 
 ## System Architecture
-BookFlow utilizes a decoupled frontend and backend architecture.
+AutoDetailing Manager utilizes a decoupled frontend and backend architecture.
 
 ### UI/UX Decisions
 - **Color Palette**: Premium black & white (`Pure Black`, `Charcoal`, `Graphite`, `Smoke`, `Silver`, `Pearl`).
