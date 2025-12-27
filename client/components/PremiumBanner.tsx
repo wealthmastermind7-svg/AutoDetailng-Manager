@@ -12,7 +12,7 @@ interface PremiumBannerProps {
 
 export function PremiumBanner({ onPress }: PremiumBannerProps) {
   const { theme: colors } = useTheme();
-  const { isPremium, showPaywall } = usePremium();
+  const { isPremium, showNativePaywall } = usePremium();
 
   if (isPremium) return null;
 
@@ -21,7 +21,7 @@ export function PremiumBanner({ onPress }: PremiumBannerProps) {
     if (onPress) {
       onPress();
     } else {
-      showPaywall("soft_upsell");
+      showNativePaywall();
     }
   };
 

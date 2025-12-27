@@ -25,7 +25,7 @@ export default function SettingsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const navigation = useNavigation();
-  const { checkAndIncrementShare, checkAndIncrementQr, checkEmbedAccess, remainingShares, remainingQrCodes, isPremium } = usePremium();
+  const { checkAndIncrementShare, checkAndIncrementQr, checkEmbedAccess, remainingShares, remainingQrCodes, isPremium, showNativePaywall, openCustomerCenter, restoreSubscription, isLoading } = usePremium();
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(false);
@@ -399,6 +399,54 @@ export default function SettingsScreen() {
           showChevron: true,
         },
       ],
+    },
+    {
+      section: "Subscription",
+      items: isPremium
+        ? [
+            {
+              icon: "award" as const,
+              title: "AutoDetailing Manager Pro",
+              subtitle: "You have unlimited access to all features",
+              onPress: () => {},
+              disabled: true,
+            },
+            {
+              icon: "settings" as const,
+              title: "Manage Subscription",
+              subtitle: "View billing, cancel, or change plan",
+              onPress: () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                openCustomerCenter();
+              },
+              showChevron: true,
+              disabled: isLoading,
+            },
+          ]
+        : [
+            {
+              icon: "star" as const,
+              title: "Upgrade to Pro",
+              subtitle: "Unlock unlimited shares, QR codes, and embeds",
+              onPress: () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                showNativePaywall();
+              },
+              showChevron: true,
+              disabled: isLoading,
+            },
+            {
+              icon: "refresh-cw" as const,
+              title: "Restore Purchases",
+              subtitle: "Restore a previous subscription",
+              onPress: () => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                restoreSubscription();
+              },
+              showChevron: true,
+              disabled: isLoading,
+            },
+          ],
     },
     {
       section: "Data Management",

@@ -5,15 +5,13 @@ import Purchases, {
   PurchasesPackage,
   PurchasesOffering,
 } from "react-native-purchases";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
-const ENTITLEMENT_ID = "AutoDetailingManager Pro";
-const IOS_REVENUECAT_API_KEY = "appl_LqjVbACDADybafbTUXlheXxxhkF";
+const ENTITLEMENT_ID = "AutoDetailng Manager Pro";
 
 function getApiKey(): string | null {
-  if (Platform.OS === "ios") {
-    return IOS_REVENUECAT_API_KEY;
-  } else if (Platform.OS === "android") {
-    return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID || null;
+  if (Platform.OS === "ios" || Platform.OS === "android") {
+    return process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || null;
   }
   return null;
 }
@@ -40,9 +38,6 @@ export async function initializeRevenueCat(): Promise<boolean> {
     Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
     
     console.log(`RevenueCat: Configuring with ${Platform.OS} API key`);
-    if (Platform.OS === "ios") {
-      console.log(`RevenueCat: Using hardcoded iOS key: ${IOS_REVENUECAT_API_KEY}`);
-    }
     
     await Purchases.configure({ apiKey });
     isInitialized = true;
@@ -146,5 +141,114 @@ export async function restorePurchases(): Promise<{
   }
 }
 
-export { Purchases, ENTITLEMENT_ID };
+export async function presentPaywall(): Promise<{
+  success: boolean;
+  isPremium: boolean;
+  result: PAYWALL_RESULT;
+}> {
+  if (Platform.OS === "web") {
+    return { success: false, isPremium: false, result: PAYWALL_RESULT.NOT_PRESENTED };
+  }
+
+  try {
+    const paywallResult = await RevenueCatUI.presentPaywall();
+    
+    switch (paywallResult) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        const isPremium = await checkPremiumStatus();
+        console.log(`RevenueCat: Paywall result = ${paywallResult}, premium = ${isPremium}`);
+        return { success: true, isPremium, result: paywallResult };
+      case PAYWALL_RESULT.CANCELLED:
+        console.log("RevenueCat: User cancelled paywall");
+        return { success: false, isPremium: false, result: paywallResult };
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      case PAYWALL_RESULT.ERROR:
+      default:
+        console.log(`RevenueCat: Paywall not completed, result = ${paywallResult}`);
+        return { success: false, isPremium: false, result: paywallResult };
+    }
+  } catch (error) {
+    console.error("RevenueCat: Failed to present paywall", error);
+    return { success: false, isPremium: false, result: PAYWALL_RESULT.ERROR };
+  }
+}
+
+export async function presentPaywallIfNeeded(): Promise<{
+  success: boolean;
+  isPremium: boolean;
+  result: PAYWALL_RESULT;
+}> {
+  if (Platform.OS === "web") {
+    return { success: false, isPremium: false, result: PAYWALL_RESULT.NOT_PRESENTED };
+  }
+
+  try {
+    const paywallResult = await RevenueCatUI.presentPaywallIfNeeded({
+      requiredEntitlementIdentifier: ENTITLEMENT_ID,
+    });
+    
+    switch (paywallResult) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        const isPremium = await checkPremiumStatus();
+        return { success: true, isPremium, result: paywallResult };
+      case PAYWALL_RESULT.NOT_PRESENTED:
+        return { success: true, isPremium: true, result: paywallResult };
+      default:
+        return { success: false, isPremium: false, result: paywallResult };
+    }
+  } catch (error) {
+    console.error("RevenueCat: Failed to present paywall if needed", error);
+    return { success: false, isPremium: false, result: PAYWALL_RESULT.ERROR };
+  }
+}
+
+export async function presentCustomerCenter(): Promise<boolean> {
+  if (Platform.OS === "web") {
+    console.log("RevenueCat: Customer Center not available on web");
+    return false;
+  }
+
+  try {
+    await RevenueCatUI.presentCustomerCenter();
+    console.log("RevenueCat: Customer Center presented successfully");
+    return true;
+  } catch (error) {
+    console.error("RevenueCat: Failed to present Customer Center", error);
+    return false;
+  }
+}
+
+export async function identifyUser(userId: string): Promise<boolean> {
+  if (Platform.OS === "web") {
+    return false;
+  }
+
+  try {
+    await Purchases.logIn(userId);
+    console.log(`RevenueCat: User identified as ${userId}`);
+    return true;
+  } catch (error) {
+    console.error("RevenueCat: Failed to identify user", error);
+    return false;
+  }
+}
+
+export async function logoutUser(): Promise<boolean> {
+  if (Platform.OS === "web") {
+    return false;
+  }
+
+  try {
+    await Purchases.logOut();
+    console.log("RevenueCat: User logged out");
+    return true;
+  } catch (error) {
+    console.error("RevenueCat: Failed to logout user", error);
+    return false;
+  }
+}
+
+export { Purchases, RevenueCatUI, ENTITLEMENT_ID, PAYWALL_RESULT };
 export type { CustomerInfo, PurchasesPackage, PurchasesOffering };

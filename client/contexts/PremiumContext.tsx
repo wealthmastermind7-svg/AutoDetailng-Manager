@@ -1,13 +1,15 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
 import { Alert, Platform } from "react-native";
 import * as Haptics from "expo-haptics";
-import { PaywallType } from "@/components/PaywallModal";
 import {
   initializeRevenueCat,
   checkPremiumStatus,
   getOfferings,
   purchasePackage,
   restorePurchases,
+  presentPaywall,
+  presentCustomerCenter,
+  PAYWALL_RESULT,
   PurchasesPackage,
   PurchasesOffering,
 } from "@/lib/revenuecat";
@@ -30,20 +32,19 @@ interface PremiumContextType {
   canUseEmbeds: boolean;
   remainingShares: number;
   remainingQrCodes: number;
-  paywallVisible: boolean;
-  paywallType: PaywallType;
   isLoading: boolean;
   offerings: PurchasesOffering | null;
-  showPaywall: (type: PaywallType) => void;
-  hidePaywall: () => void;
+  showNativePaywall: () => Promise<boolean>;
+  openCustomerCenter: () => Promise<boolean>;
   checkAndIncrementShare: () => boolean;
   checkAndIncrementQr: () => boolean;
   checkEmbedAccess: () => boolean;
-  handleUpgrade: (plan: "monthly" | "yearly") => Promise<void>;
+  handleUpgrade: (plan: "monthly" | "yearly" | "lifetime") => Promise<void>;
   purchaseProduct: (pkg: PurchasesPackage) => Promise<boolean>;
   restoreSubscription: () => Promise<boolean>;
   updatePremiumState: (state: Partial<PremiumState>) => void;
   refreshUsage: () => void;
+  refreshPremiumStatus: () => Promise<void>;
 }
 
 const PremiumContext = createContext<PremiumContextType | undefined>(undefined);
@@ -59,20 +60,67 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
   const [weeklyQrCount, setWeeklyQrCount] = useState(initialState?.weeklyQrCount ?? 0);
   const [weeklyResetAt, setWeeklyResetAt] = useState<string | null>(initialState?.weeklyResetAt ?? null);
   
-  const [paywallVisible, setPaywallVisible] = useState(false);
-  const [paywallType, setPaywallType] = useState<PaywallType>("soft_upsell");
   const [isLoading, setIsLoading] = useState(false);
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
+  const [isRevenueCatInitialized, setIsRevenueCatInitialized] = useState(false);
+
+  const processPaywallResult = useCallback(async (result: { result: typeof PAYWALL_RESULT[keyof typeof PAYWALL_RESULT]; success: boolean; isPremium: boolean; error?: string }): Promise<boolean> => {
+    switch (result.result) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        const premium = await checkPremiumStatus();
+        setIsPremium(premium);
+        if (premium) {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          Alert.alert("Welcome to Premium!", "You now have unlimited access to all AutoDetailing Manager features.");
+          return true;
+        }
+        return false;
+      case PAYWALL_RESULT.CANCELLED:
+        return false;
+      case PAYWALL_RESULT.ERROR:
+        Alert.alert("Error", "Something went wrong. Please try again.");
+        return false;
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      default:
+        return false;
+    }
+  }, []);
+
+  const presentAndProcessPaywall = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS === "web") return false;
+    
+    setIsLoading(true);
+    try {
+      const result = await presentPaywall();
+      return processPaywallResult(result);
+    } catch (error) {
+      console.error("Error presenting paywall:", error);
+      Alert.alert("Error", "Something went wrong. Please try again.");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [processPaywallResult]);
 
   useEffect(() => {
     async function initPurchases() {
-      const initialized = await initializeRevenueCat();
-      if (initialized) {
-        const premium = await checkPremiumStatus();
-        setIsPremium(premium);
+      try {
+        const initialized = await initializeRevenueCat();
+        if (!initialized) {
+          return;
+        }
         
-        const currentOfferings = await getOfferings();
+        const [premium, currentOfferings] = await Promise.all([
+          checkPremiumStatus(),
+          getOfferings(),
+        ]);
+        
+        setIsPremium(premium);
         setOfferings(currentOfferings);
+        setIsRevenueCatInitialized(true);
+      } catch (error) {
+        console.error("Error initializing RevenueCat on mount:", error);
       }
     }
     initPurchases();
@@ -100,46 +148,105 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
   const remainingShares = Math.max(0, WEEKLY_LIMIT - weeklyShareCount);
   const remainingQrCodes = Math.max(0, WEEKLY_LIMIT - weeklyQrCount);
 
-  const showPaywall = useCallback((type: PaywallType) => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    setPaywallType(type);
-    setPaywallVisible(true);
-  }, []);
+  const ensureInitialized = useCallback(async (): Promise<{ success: boolean; offerings: PurchasesOffering | null }> => {
+    if (Platform.OS === "web") return { success: false, offerings: null };
+    
+    if (isRevenueCatInitialized && offerings && offerings.availablePackages.length > 0) {
+      return { success: true, offerings };
+    }
+    
+    try {
+      if (!isRevenueCatInitialized) {
+        const initialized = await initializeRevenueCat();
+        if (!initialized) {
+          Alert.alert(
+            "Connection Error",
+            "Could not connect to subscription service. Please check your internet connection and try again.",
+            [{ text: "OK", style: "default" }]
+          );
+          return { success: false, offerings: null };
+        }
+      }
+      
+      const [premium, currentOfferings] = await Promise.all([
+        checkPremiumStatus(),
+        getOfferings(),
+      ]);
+      
+      setIsPremium(premium);
+      setOfferings(currentOfferings);
+      
+      if (currentOfferings && currentOfferings.availablePackages.length > 0) {
+        setIsRevenueCatInitialized(true);
+        return { success: true, offerings: currentOfferings };
+      } else {
+        Alert.alert(
+          "Products Not Available",
+          "Unable to load subscription options. Please check your internet connection and try again.",
+          [{ text: "OK", style: "default" }]
+        );
+        return { success: false, offerings: null };
+      }
+    } catch (error) {
+      console.error("Error initializing RevenueCat:", error);
+      Alert.alert(
+        "Connection Error",
+        "Could not connect to subscription service. Please check your internet connection and try again.",
+        [{ text: "OK", style: "default" }]
+      );
+      return { success: false, offerings: null };
+    }
+  }, [isRevenueCatInitialized, offerings]);
 
-  const hidePaywall = useCallback(() => {
-    setPaywallVisible(false);
-  }, []);
+  const triggerNativePaywall = useCallback(async () => {
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Mobile Only",
+        "Subscriptions are available in the iOS and Android app.",
+        [{ text: "OK", style: "default" }]
+      );
+      return false;
+    }
+
+    const result = await ensureInitialized();
+    if (!result.success) return false;
+
+    return presentAndProcessPaywall();
+  }, [ensureInitialized, presentAndProcessPaywall]);
 
   const checkAndIncrementShare = useCallback((): boolean => {
     if (isPremium) return true;
     
     if (weeklyShareCount >= WEEKLY_LIMIT) {
-      showPaywall("share_limit");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      triggerNativePaywall();
       return false;
     }
     
     setWeeklyShareCount((prev) => prev + 1);
     return true;
-  }, [isPremium, weeklyShareCount, showPaywall]);
+  }, [isPremium, weeklyShareCount, triggerNativePaywall]);
 
   const checkAndIncrementQr = useCallback((): boolean => {
     if (isPremium) return true;
     
     if (weeklyQrCount >= WEEKLY_LIMIT) {
-      showPaywall("qr_limit");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      triggerNativePaywall();
       return false;
     }
     
     setWeeklyQrCount((prev) => prev + 1);
     return true;
-  }, [isPremium, weeklyQrCount, showPaywall]);
+  }, [isPremium, weeklyQrCount, triggerNativePaywall]);
 
   const checkEmbedAccess = useCallback((): boolean => {
     if (isPremium) return true;
     
-    showPaywall("embed_locked");
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    triggerNativePaywall();
     return false;
-  }, [isPremium, showPaywall]);
+  }, [isPremium, triggerNativePaywall]);
 
   const purchaseProduct = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
     if (Platform.OS === "web") {
@@ -153,7 +260,6 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
       if (result.success && result.isPremium) {
         setIsPremium(true);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        hidePaywall();
         Alert.alert("Welcome to Premium!", "You now have unlimited access to all AutoDetailing Manager features.");
         return true;
       } else if (result.error === "cancelled") {
@@ -168,7 +274,7 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
     } finally {
       setIsLoading(false);
     }
-  }, [hidePaywall]);
+  }, []);
 
   const restoreSubscription = useCallback(async (): Promise<boolean> => {
     if (Platform.OS === "web") {
@@ -196,7 +302,7 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
     }
   }, []);
 
-  const handleUpgrade = useCallback(async (plan: "monthly" | "yearly") => {
+  const handleUpgrade = useCallback(async (plan: "monthly" | "yearly" | "lifetime") => {
     if (Platform.OS === "web") {
       Alert.alert(
         "Mobile Only",
@@ -206,20 +312,27 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
       return;
     }
 
-    if (!offerings || offerings.availablePackages.length === 0) {
-      Alert.alert(
-        "Products Not Available",
-        "Unable to load subscription options. Please try again.",
-        [{ text: "OK", style: "default" }]
-      );
-      return;
+    let currentOfferings = offerings;
+    
+    if (!currentOfferings || currentOfferings.availablePackages.length === 0) {
+      const result = await ensureInitialized();
+      if (!result.success || !result.offerings || result.offerings.availablePackages.length === 0) {
+        Alert.alert(
+          "Products Not Available",
+          "Unable to load subscription options. Please check your internet connection and try again.",
+          [{ text: "OK", style: "default" }]
+        );
+        return;
+      }
+      currentOfferings = result.offerings;
     }
 
-    // Find the package matching the selected plan
-    const selectedPackage = offerings.availablePackages.find((pkg) => {
+    const selectedPackage = currentOfferings.availablePackages.find((pkg) => {
       const identifier = pkg.identifier.toLowerCase();
       if (plan === "yearly") {
         return identifier.includes("annual") || identifier.includes("yearly") || identifier.includes("year");
+      } else if (plan === "lifetime") {
+        return identifier.includes("lifetime") || identifier.includes("forever") || identifier.includes("permanent");
       } else {
         return identifier.includes("monthly") || identifier.includes("month");
       }
@@ -231,13 +344,12 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
         `The ${plan} plan is not available. Please try again.`,
         [{ text: "OK", style: "default" }]
       );
-      console.error(`Could not find ${plan} package in offerings:`, offerings.availablePackages.map((p) => p.identifier));
+      console.error(`Could not find ${plan} package in offerings:`, currentOfferings.availablePackages.map((p) => p.identifier));
       return;
     }
 
-    // Trigger the actual purchase
     await purchaseProduct(selectedPackage);
-  }, [offerings, purchaseProduct]);
+  }, [offerings, purchaseProduct, ensureInitialized]);
 
   const updatePremiumState = useCallback((state: Partial<PremiumState>) => {
     if (state.isPremium !== undefined) setIsPremium(state.isPremium);
@@ -260,6 +372,52 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
     }
   }, [weeklyResetAt]);
 
+  const refreshPremiumStatus = useCallback(async () => {
+    const premium = await checkPremiumStatus();
+    setIsPremium(premium);
+  }, []);
+
+  const showNativePaywall = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Mobile Only",
+        "Subscriptions are available in the iOS and Android app.",
+        [{ text: "OK", style: "default" }]
+      );
+      return false;
+    }
+
+    const result = await ensureInitialized();
+    if (!result.success) return false;
+
+    return presentAndProcessPaywall();
+  }, [ensureInitialized, presentAndProcessPaywall]);
+
+  const openCustomerCenter = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS === "web") {
+      Alert.alert(
+        "Mobile Only",
+        "Subscription management is available in the iOS and Android app.",
+        [{ text: "OK", style: "default" }]
+      );
+      return false;
+    }
+
+    const initResult = await ensureInitialized();
+    if (!initResult.success) return false;
+
+    try {
+      const customerCenterResult = await presentCustomerCenter();
+      if (customerCenterResult) {
+        await refreshPremiumStatus();
+      }
+      return customerCenterResult;
+    } catch (error) {
+      Alert.alert("Error", "Could not open subscription management. Please try again.");
+      return false;
+    }
+  }, [ensureInitialized, refreshPremiumStatus]);
+
   return (
     <PremiumContext.Provider
       value={{
@@ -271,12 +429,10 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
         canUseEmbeds,
         remainingShares,
         remainingQrCodes,
-        paywallVisible,
-        paywallType,
         isLoading,
         offerings,
-        showPaywall,
-        hidePaywall,
+        showNativePaywall,
+        openCustomerCenter,
         checkAndIncrementShare,
         checkAndIncrementQr,
         checkEmbedAccess,
@@ -285,6 +441,7 @@ export function PremiumProvider({ children, initialState }: PremiumProviderProps
         restoreSubscription,
         updatePremiumState,
         refreshUsage,
+        refreshPremiumStatus,
       }}
     >
       {children}

@@ -13,31 +13,13 @@ import { api } from "@/lib/api";
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PremiumProvider } from "@/contexts/PremiumContext";
-import { PaywallModal } from "@/components/PaywallModal";
-import { usePremium } from "@/contexts/PremiumContext";
-
-function PaywallContainer() {
-  const { paywallVisible, paywallType, hidePaywall, handleUpgrade, isLoading, offerings } = usePremium();
-  return (
-    <PaywallModal
-      visible={paywallVisible}
-      type={paywallType}
-      onClose={hidePaywall}
-      onUpgrade={handleUpgrade}
-      isLoading={isLoading}
-      offerings={offerings}
-    />
-  );
-}
 
 export default function App() {
   useEffect(() => {
-    // Load persisted business ID and business object on app startup
     (async () => {
       try {
         const businessId = await api.loadBusinessId();
         if (businessId) {
-          // Ensure business object is loaded with all data (slug, etc)
           await api.getBusiness();
         }
       } catch (error) {
@@ -56,7 +38,6 @@ export default function App() {
                 <NavigationContainer>
                   <RootStackNavigator />
                 </NavigationContainer>
-                <PaywallContainer />
               </PremiumProvider>
               <StatusBar style="auto" />
             </KeyboardProvider>
