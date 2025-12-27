@@ -12,7 +12,6 @@ import { api } from "@/lib/api";
 
 import RootStackNavigator from "@/navigation/RootStackNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { PremiumProvider } from "@/contexts/PremiumContext";
 
 export default function App() {
   useEffect(() => {
@@ -34,11 +33,9 @@ export default function App() {
         <SafeAreaProvider>
           <GestureHandlerRootView style={styles.root}>
             <KeyboardProvider>
-              <PremiumProvider>
-                <NavigationContainer>
-                  <RootStackNavigator />
-                </NavigationContainer>
-              </PremiumProvider>
+              <NavigationContainer>
+                <RootStackNavigator />
+              </NavigationContainer>
               <StatusBar style="auto" />
             </KeyboardProvider>
           </GestureHandlerRootView>

@@ -16,8 +16,6 @@ import { ThemedView } from "@/components/ThemedView";
 import { ThemedText } from "@/components/ThemedText";
 import { Button } from "@/components/Button";
 import { getApiUrl } from "@/lib/query-client";
-import { usePremium } from "@/contexts/PremiumContext";
-
 type EmbedType = "inline" | "popup-button" | "popup-text";
 
 export default function SettingsScreen() {
@@ -25,7 +23,6 @@ export default function SettingsScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { theme, isDark } = useTheme();
   const navigation = useNavigation();
-  const { checkAndIncrementShare, checkAndIncrementQr, checkEmbedAccess, remainingShares, remainingQrCodes, isPremium, showNativePaywall, openCustomerCenter, restoreSubscription, isLoading } = usePremium();
 
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(false);
@@ -149,10 +146,6 @@ export default function SettingsScreen() {
   const handleShareBookingLink = async () => {
     if (!business) return;
     
-    if (!checkAndIncrementShare()) {
-      return;
-    }
-    
     const bookingLink = business.bookingUrl || `https://${getBookingDomain()}/book/${business.slug}`;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -167,10 +160,6 @@ export default function SettingsScreen() {
   };
 
   const handleShowQRCode = async () => {
-    if (!checkAndIncrementQr()) {
-      return;
-    }
-    
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const data = await api.getQRCode();
@@ -204,10 +193,6 @@ export default function SettingsScreen() {
   };
 
   const handleShowEmbedModal = async () => {
-    if (!checkEmbedAccess()) {
-      return;
-    }
-    
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setEmbedCode(null);
     setEmbedError(false);
@@ -399,54 +384,6 @@ export default function SettingsScreen() {
           showChevron: true,
         },
       ],
-    },
-    {
-      section: "Subscription",
-      items: isPremium
-        ? [
-            {
-              icon: "award" as const,
-              title: "AutoDetailing Manager Pro",
-              subtitle: "You have unlimited access to all features",
-              onPress: () => {},
-              disabled: true,
-            },
-            {
-              icon: "settings" as const,
-              title: "Manage Subscription",
-              subtitle: "View billing, cancel, or change plan",
-              onPress: () => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                openCustomerCenter();
-              },
-              showChevron: true,
-              disabled: isLoading,
-            },
-          ]
-        : [
-            {
-              icon: "star" as const,
-              title: "Upgrade to Pro",
-              subtitle: "Unlock unlimited shares, QR codes, and embeds",
-              onPress: () => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                showNativePaywall();
-              },
-              showChevron: true,
-              disabled: isLoading,
-            },
-            {
-              icon: "refresh-cw" as const,
-              title: "Restore Purchases",
-              subtitle: "Restore a previous subscription",
-              onPress: () => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                restoreSubscription();
-              },
-              showChevron: true,
-              disabled: isLoading,
-            },
-          ],
     },
     {
       section: "Data Management",
